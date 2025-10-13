@@ -18,7 +18,7 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Get changed files
         id: detect-changes
@@ -43,6 +43,6 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - run: docker run --mount type=bind,source="$(pwd)",target=/mnt/source -w /mnt/source tamasfe/taplo fmt --check
