@@ -84,8 +84,8 @@ jobs:
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
         with:
           persist-credentials: false
-      - name: Build and test with Docker Compose
+      - name: Build Docker image
+        run: docker build -t doco:axum-postgres -f examples/axum-postgres/Dockerfile .
+      - name: Run integration tests
         working-directory: examples/axum-postgres
-        run: |
-          docker compose up --build --abort-on-container-exit --exit-code-from tests
-          docker compose down -v
+        run: cargo test --all-features --all-targets

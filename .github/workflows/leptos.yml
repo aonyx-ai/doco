@@ -84,8 +84,8 @@ jobs:
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
         with:
           persist-credentials: false
-      - name: Build and test with Docker
+      - name: Build Docker image
+        run: docker build -t doco:leptos -f examples/leptos/Dockerfile .
+      - name: Run integration tests
         working-directory: examples/leptos
-        run: |
-          docker build -t doco:leptos .
-          cargo test --all-features --all-targets
+        run: cargo test --all-features --all-targets

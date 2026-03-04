@@ -26,16 +26,6 @@ check-docs:
 check-features:
     cargo hack --feature-powerset check --lib --tests
 
-# Check latest dependencies
-check-deps-latest:
-    cargo update
-    RUSTFLAGS="-D deprecated" cargo check --all-features --all-targets
-
-# Check minimal dependencies (requires nightly)
-check-deps-minimal:
-    cargo +nightly update -Z direct-minimal-versions
-    cargo check --all-features --all-targets
-
 # Format JSON files
 format-json fix="false": (prettier fix "{json,json5}")
 

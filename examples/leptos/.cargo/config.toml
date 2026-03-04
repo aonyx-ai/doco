@@ -1,2 +1,0 @@
-[alias]
-leptos = ["bin", "cargo-leptos"]
