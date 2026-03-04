@@ -15,6 +15,3 @@ description = "A framework and runner for end-to-end tests for web applications"
 homepage = "https://github.com/otterbuild/doco"
 repository = "https://github.com/otterbuild/doco.git"
 readme = "README.md"
-
-[workspace.metadata.bin]
-leptosfmt = { version = "0.1.30" }
