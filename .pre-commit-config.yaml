@@ -1,12 +1,3 @@
-# pre-commit configuration
-#
-# We use pre-commit to enforce a consistency in our repositories. By default,
-# YAML and Markdown files get linted, and Prettier runs to auto-format the file
-# types it supports. Depending on the project, other rules can be added here to
-# support the needs of the project.
-#
-# See https://pre-commit.com for more information
-# See https://pre-commit.com/hooks.html for more hooks
 ---
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
@@ -16,38 +7,14 @@ repos:
         args: ["--maxkb=1024"]
       - id: check-case-conflict
       - id: end-of-file-fixer
+        exclude: ^.flox/env/manifest.lock$
       - id: trailing-whitespace
         args: [--markdown-linebreak-ext=md]
-  - repo: https://github.com/igorshubovych/markdownlint-cli
-    rev: v0.47.0
-    hooks:
-      - id: markdownlint
-  - repo: https://github.com/adrienverge/yamllint
-    rev: v1.38.0
-    hooks:
-      - id: yamllint
-  - repo: https://github.com/pre-commit/mirrors-prettier
-    rev: v4.0.0-alpha.8
-    hooks:
-      - id: prettier
-        args: ["--cache-location=.prettiercache"]
-  - repo: https://github.com/doublify/pre-commit-rust
-    rev: v1.0
-    hooks:
-      - id: clippy
-        args: [--all-features, --all-targets, --, -D, warnings]
-      - id: cargo-check
-      - id: fmt
-        args: [--all, --]
-  - repo: https://github.com/hoxbro/taplo-pre-commit
-    rev: v0.9.3
-    hooks:
-      - id: taplo
   - repo: local
     hooks:
-      - id: leptosfmt
-        name: leptosfmt
-        description: Format the view! macro of Leptos
+      - id: just
+        name: just
+        entry: just
+        args: ["pre-commit"]
         language: system
-        entry: cargo bin leptosfmt -q
-        types: [rust]
+        pass_filenames: false

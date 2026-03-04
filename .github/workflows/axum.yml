@@ -8,128 +8,84 @@ name: Example / axum
   pull_request:
   workflow_dispatch:
 
+permissions: {}
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   detect-changes:
     name: Detect changes
-    runs-on: ubuntu-latest
-
+    runs-on: warp-ubuntu-latest-x64-2x
+    permissions:
+      contents: read
     outputs:
       any_changed: ${{ steps.detect-changes.outputs.any_changed }}
-
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
-
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          persist-credentials: false
       - name: Get changed files
         id: detect-changes
-        uses: tj-actions/changed-files@v45
+        uses: tj-actions/changed-files@48d8f15b2aaa3d255ca5af3eba4870f807ce6b3c # v45
         with:
           files: |
             .github/workflows/axum.yml
             crates/**/*
             examples/axum-postgres/**/*
 
-      - name: Print changed files
-        run: |
-          for file in ${{ steps.detect-changes.outputs.all_changed_files }}; do
-            echo "$file"
-          done
-
   format:
     name: Check Rust style
-    runs-on: ubuntu-latest
-
+    runs-on: warp-ubuntu-latest-x64-2x
     permissions:
-      packages: write
       contents: read
-
     needs: detect-changes
     if: needs.detect-changes.outputs.any_changed == 'true' || github.event_name == 'workflow_dispatch'
-
+    defaults:
+      run:
+        working-directory: examples/axum-postgres
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Login to GitHub Container Registry
-        uses: docker/login-action@v3
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
         with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Install earthly
-        uses: earthly/actions-setup@v1
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          version: 0.8
-
-      - name: Run check with Earthly
-        env:
-          EARTHLY_TOKEN: ${{ secrets.EARTHLY_TOKEN }}
-        run: earthly --ci --push --remote-cache=ghcr.io/otterbuild/doco-earthly-cache:example-axum-format +example-axum-format
+          persist-credentials: false
+      - name: Check formatting
+        run: cargo fmt --all --check
 
   lint:
     name: Lint Rust code
-    runs-on: ubuntu-latest
-
+    runs-on: warp-ubuntu-latest-x64-2x
     permissions:
-      packages: write
       contents: read
-
     needs: detect-changes
     if: needs.detect-changes.outputs.any_changed == 'true' || github.event_name == 'workflow_dispatch'
-
+    defaults:
+      run:
+        working-directory: examples/axum-postgres
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Login to GitHub Container Registry
-        uses: docker/login-action@v3
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
         with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Install earthly
-        uses: earthly/actions-setup@v1
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          version: 0.8
-
-      - name: Run check with Earthly
-        env:
-          EARTHLY_TOKEN: ${{ secrets.EARTHLY_TOKEN }}
-        run: earthly --ci --push --remote-cache=ghcr.io/otterbuild/doco-earthly-cache:example-axum-lint +example-axum-lint
+          persist-credentials: false
+      - name: Lint with Clippy
+        run: cargo clippy --all-targets --all-features -- -D warnings
 
   test:
-    name: Run Rust tests
-    runs-on: ubuntu-latest
-
+    name: Run integration tests
+    runs-on: warp-ubuntu-latest-x64-2x
     permissions:
-      packages: write
       contents: read
-
     needs: detect-changes
     if: needs.detect-changes.outputs.any_changed == 'true' || github.event_name == 'workflow_dispatch'
-
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Login to GitHub Container Registry
-        uses: docker/login-action@v3
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
         with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Install earthly
-        uses: earthly/actions-setup@v1
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          version: 0.8
-
-      - name: Run check with Earthly
-        env:
-          EARTHLY_TOKEN: ${{ secrets.EARTHLY_TOKEN }}
-        run: earthly --allow-privileged --push --remote-cache=ghcr.io/otterbuild/doco-earthly-cache:example-axum-test --strict +example-axum-test
+          persist-credentials: false
+      - name: Build and test with Docker Compose
+        working-directory: examples/axum-postgres
+        run: |
+          docker compose up --build --abort-on-container-exit --exit-code-from tests
+          docker compose down -v

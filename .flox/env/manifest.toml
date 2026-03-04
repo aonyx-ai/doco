@@ -1,0 +1,38 @@
+version = 1
+
+[install]
+cargo.pkg-group = "rust-toolchain"
+cargo.pkg-path = "cargo"
+clippy.pkg-group = "rust-toolchain"
+clippy.pkg-path = "clippy"
+rustc.pkg-group = "rust-toolchain"
+rustc.pkg-path = "rustc"
+rustfmt.pkg-group = "rust-toolchain"
+rustfmt.pkg-path = "rustfmt"
+libiconv.pkg-path = "libiconv"
+libiconv.systems = ["aarch64-darwin", "x86_64-darwin"]
+rust-lib-src.pkg-group = "rust-toolchain"
+rust-lib-src.pkg-path = "rustPlatform.rustLibSrc"
+rust-analyzer.pkg-group = "rust-analyzer"
+rust-analyzer.pkg-path = "rust-analyzer"
+clang.pkg-path = "clang"
+clang.systems = ["aarch64-darwin", "x86_64-darwin"]
+gcc.pkg-path = "gcc"
+gcc.systems = ["aarch64-linux", "x86_64-linux"]
+cargo-hack.pkg-path = "cargo-hack"
+cargo-tarpaulin.pkg-path = "cargo-tarpaulin"
+git.pkg-path = "git"
+gum.pkg-path = "gum"
+just.pkg-path = "just"
+markdownlint-cli.pkg-path = "markdownlint-cli"
+parallel.pkg-path = "parallel"
+prettier.pkg-path = "prettier"
+taplo.pkg-path = "taplo"
+yamllint.pkg-path = "yamllint"
+zizmor.pkg-path = "zizmor"
+lld.pkg-path = "lld"
+
+[profile]
+[include]
+[build]
+[options]

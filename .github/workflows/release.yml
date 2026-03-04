@@ -3,23 +3,32 @@ name: Release
 
 "on":
   release:
-    types: [published]
+    types: [released]
+
+permissions: {}
+
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: true
 
 jobs:
   publish:
     name: Publish to crates.io
     runs-on: ubuntu-latest
-
+    permissions:
+      contents: read
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Publish doco-derive
-        run: cargo publish -v --all-features -p doco-derive
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          persist-credentials: false
+      - name: Install Flox
+        uses: flox/install-flox-action@9428713e8d3883274c334b4b95b8830beebd24d2 # v2
+      - name: Remove Flox installer (if it exists)
+        run: rm -f flox.x86_64-linux.deb
+      - name: Publish crate
+        uses: flox/activate-action@410568008895a0f2e09a34bbd9523f8ef1f2d292 # v1
         env:
           CARGO_REGISTRY_TOKEN: ${{ secrets.CRATES_TOKEN }}
-
-      - name: Publish doco
-        run: cargo publish -v --all-features -p doco
-        env:
-          CARGO_REGISTRY_TOKEN: ${{ secrets.CRATES_TOKEN }}
+        with:
+          command: just publish
