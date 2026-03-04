@@ -18,7 +18,7 @@ inventory = "0.3.15"
 reqwest = { version = "0.12.7", features = ["rustls-tls"] }
 testcontainers = "0.23.0"
 tokio = { version = "1.40.0", features = ["macros", "rt-multi-thread"] }
-typed-builder = "0.20.0"
+typed-builder = "0.23.0"
 
 [dev-dependencies]
 axum = "0.8.0"
