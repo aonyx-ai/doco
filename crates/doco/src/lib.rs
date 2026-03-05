@@ -46,10 +46,10 @@
 
 pub use anyhow::{anyhow, Context, Error, Result};
 pub use doco_derive::{main, test};
-pub use thirtyfour::By;
 use getset::Getters;
 pub use inventory;
 pub use testcontainers::core::WaitFor;
+pub use thirtyfour::By;
 use typed_builder::TypedBuilder;
 
 pub use crate::client::Client;
