@@ -1,6 +1,6 @@
 use std::time::Duration;
 
-use doco::{Client, Doco, Locator, Result, Server};
+use doco::{By, Client, Doco, Result, Server};
 use tokio::time::sleep;
 
 #[doco::test]
@@ -8,7 +8,7 @@ async fn has_title(client: Client) -> Result<()> {
     client.goto("/").await?;
 
     let title = client
-        .find(Locator::XPath("/html/body/main/h1"))
+        .find(By::XPath("/html/body/main/h1"))
         .await?
         .text()
         .await?;
@@ -23,7 +23,7 @@ async fn clicking_button_increases_counter(client: Client) -> Result<()> {
     client.goto("/").await?;
 
     let button = client
-        .find(Locator::XPath("/html/body/main/button"))
+        .find(By::XPath("/html/body/main/button"))
         .await?;
 
     let before = button.text().await?;

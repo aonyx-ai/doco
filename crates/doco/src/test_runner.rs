@@ -92,24 +92,28 @@ impl TestRunner {
         let server = server.start().await?;
         let port = server.get_host_port_ipv4(self.doco.server().port()).await?;
 
-        let client = fantoccini::ClientBuilder::native()
-            .connect(&format!(
+        let driver = thirtyfour::WebDriver::new(
+            &format!(
                 "http://{}:{}",
                 self.selenium.get_host().await?,
                 self.selenium.get_host_port_ipv4(4444).await?
-            ))
-            .await
-            .expect("failed to connect to WebDriver");
+            ),
+            thirtyfour::DesiredCapabilities::firefox(),
+        )
+        .await
+        .expect("failed to connect to WebDriver");
 
         let client = Client::builder()
             .base_url(format!("http://{DOCKER_HOST}:{port}").parse()?)
-            .client(client)
+            .client(driver.clone())
             .build();
 
         println!("{}...", name);
-        test(client)?;
+        let result = test(client);
 
-        Ok(())
+        driver.quit().await.ok();
+
+        result
     }
 }
 
@@ -149,21 +153,25 @@ mod tests {
 
         let selenium = start_selenium().await?;
 
-        let client = fantoccini::ClientBuilder::native()
-            .connect(&format!(
+        let driver = thirtyfour::WebDriver::new(
+            &format!(
                 "http://{}:{}",
                 selenium.get_host().await?,
                 selenium.get_host_port_ipv4(4444).await?
-            ))
-            .await
-            .expect("failed to connect to WebDriver");
+            ),
+            thirtyfour::DesiredCapabilities::firefox(),
+        )
+        .await
+        .expect("failed to connect to WebDriver");
 
-        client
+        driver
             .goto(&format!("http://{DOCKER_HOST}:{port}/"))
             .await?;
-        let body = client.source().await?;
+        let body = driver.source().await?;
 
         assert!(body.contains("hello from the test"));
+
+        driver.quit().await.ok();
 
         Ok(())
     }

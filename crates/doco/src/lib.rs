@@ -46,7 +46,7 @@
 
 pub use anyhow::{anyhow, Context, Error, Result};
 pub use doco_derive::{main, test};
-pub use fantoccini::Locator;
+pub use thirtyfour::By;
 use getset::Getters;
 pub use inventory;
 pub use testcontainers::core::WaitFor;
