@@ -22,9 +22,7 @@ async fn has_title(client: Client) -> Result<()> {
 async fn clicking_button_increases_counter(client: Client) -> Result<()> {
     client.goto("/").await?;
 
-    let button = client
-        .find(By::XPath("/html/body/main/button"))
-        .await?;
+    let button = client.find(By::XPath("/html/body/main/button")).await?;
 
     let before = button.text().await?;
     assert_eq!("Click Me: 0", before);
