@@ -51,21 +51,36 @@ pub fn main(_args: TokenStream, input: TokenStream) -> TokenStream {
 
         doco::inventory::collect!(TestCase);
 
-        #[tokio::main]
-        async fn main() {
-            let doco: doco::Doco = #main_block;
+        fn main() {
+            let rt = tokio::runtime::Builder::new_multi_thread()
+                .enable_all()
+                .build()
+                .expect("failed to build tokio runtime");
 
-            let test_runner = doco::TestRunner::init(doco).await.expect("failed to initialize the test runner");
-            let tests = doco::inventory::iter::<TestCase>.into_iter().count();
+            let doco: doco::Doco = rt.block_on(async #main_block);
 
-            println!("Running {} tests...\n", tests);
+            let test_runner = rt.block_on(doco::TestRunner::init(doco))
+                .expect("failed to initialize the test runner");
 
-            for test in doco::inventory::iter::<TestCase> {
-                // TODO: Collect results, report them, and remove the `expect` statement
-                test_runner.run(test.name, test.function).await.expect("failed to run test");
-            }
+            let test_runner = std::sync::Arc::new(test_runner);
 
-            println!("\nDone.");
+            let args = doco::libtest_mimic::Arguments::from_args();
+
+            let tests: Vec<doco::libtest_mimic::Trial> = doco::inventory::iter::<TestCase>
+                .into_iter()
+                .map(|tc| {
+                    let runner = std::sync::Arc::clone(&test_runner);
+                    let handle = rt.handle().clone();
+                    let func = tc.function;
+
+                    doco::libtest_mimic::Trial::test(tc.name, move || {
+                        handle.block_on(runner.run(func))
+                            .map_err(|e| e.into())
+                    })
+                })
+                .collect();
+
+            doco::libtest_mimic::run(&args, tests).exit();
         }
     };
 

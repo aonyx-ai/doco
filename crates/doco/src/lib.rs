@@ -48,6 +48,7 @@ pub use anyhow::{anyhow, Context, Error, Result};
 pub use doco_derive::{main, test};
 use getset::Getters;
 pub use inventory;
+pub use libtest_mimic;
 pub use testcontainers::core::WaitFor;
 pub use thirtyfour::By;
 use typed_builder::TypedBuilder;

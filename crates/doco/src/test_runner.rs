@@ -50,11 +50,7 @@ impl TestRunner {
     /// This method executes a test in a clean, ephemeral environment. First, it starts any
     /// auxiliary services like databases and waits for them to be ready. Then, it starts the
     /// server, configures the WebDriver [`Client`], and calls the test function.
-    ///
-    /// It should not be necessary to use this struct directly. Instead, use the [`doco::main`] and
-    /// [`doco::test`] macros to automatically set up the test runner, collect all tests, and pass
-    /// them to the runner.
-    pub async fn run(&self, name: &str, test: fn(Client) -> Result<()>) -> Result<()> {
+    pub async fn run(&self, test: fn(Client) -> Result<()>) -> Result<()> {
         let mut services = Vec::with_capacity(self.doco.services().len());
 
         let mut server = GenericImage::new(self.doco.server().image(), self.doco.server().tag())
@@ -108,12 +104,11 @@ impl TestRunner {
             .client(driver.clone())
             .build();
 
-        println!("{}...", name);
-        let result = test(client);
+        test(client)?;
 
         driver.quit().await.ok();
 
-        result
+        Ok(())
     }
 }
 
