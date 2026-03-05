@@ -43,7 +43,7 @@ pub fn main(_args: TokenStream, input: TokenStream) -> TokenStream {
     // Generate code that initializes the asynchronous runtime, the inventory for tests, and then
     // sets up the given function as the entry point for the program
     let initialization_and_function = quote! {
-        #[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug)]
+        #[derive(Clone, Debug)]
         struct TestCase {
             pub name: &'static str,
             pub function: fn(doco::Client) -> doco::Result<()>,

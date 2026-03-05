@@ -3,6 +3,7 @@ extends: default
 
 ignore:
   - ".flox/"
+  - "target/"
 
 rules:
   document-start: disable
