@@ -56,7 +56,7 @@ leptos = { version = "0.6.14" }
 leptos_axum = { version = "0.6.14", optional = true }
 leptos_meta = { version = "0.6.14" }
 leptos_router = { version = "0.6.14" }
-tokio = { version = "1.40.0", features = ["rt-multi-thread"], optional = true }
+tokio = { version = "1.43.1", features = ["rt-multi-thread"], optional = true }
 tower = { version = "0.4.13", optional = true }
 tower-http = { version = "0.5.2", features = ["fs"], optional = true }
 wasm-bindgen = "=0.2.100"
@@ -67,4 +67,4 @@ http = "1.1.0"
 [dev-dependencies]
 assert_cmd = "2.0.16"
 doco = { path = "../../crates/doco" }
-tokio = { version = "1.40.0", features = ["rt-multi-thread"] }
+tokio = { version = "1.43.1", features = ["rt-multi-thread"] }
