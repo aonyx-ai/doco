@@ -40,51 +40,13 @@ pub fn main(_args: TokenStream, input: TokenStream) -> TokenStream {
     let main_fn = parse_macro_input!(input as ItemFn);
     let main_block = main_fn.block;
 
-    // Generate code that initializes the asynchronous runtime, the inventory for tests, and then
-    // sets up the given function as the entry point for the program
-    let initialization_and_function = quote! {
-        #[derive(Clone, Debug)]
-        struct TestCase {
-            pub name: &'static str,
-            pub function: fn(doco::Client) -> doco::Result<()>,
-        }
-
-        doco::inventory::collect!(TestCase);
-
+    let expanded = quote! {
         fn main() {
-            let rt = tokio::runtime::Builder::new_multi_thread()
-                .enable_all()
-                .build()
-                .expect("failed to build tokio runtime");
-
-            let doco: doco::Doco = rt.block_on(async #main_block);
-
-            let test_runner = rt.block_on(doco::TestRunner::init(doco))
-                .expect("failed to initialize the test runner");
-
-            let test_runner = std::sync::Arc::new(test_runner);
-
-            let args = doco::libtest_mimic::Arguments::from_args();
-
-            let tests: Vec<doco::libtest_mimic::Trial> = doco::inventory::iter::<TestCase>
-                .into_iter()
-                .map(|tc| {
-                    let runner = std::sync::Arc::clone(&test_runner);
-                    let handle = rt.handle().clone();
-                    let func = tc.function;
-
-                    doco::libtest_mimic::Trial::test(tc.name, move || {
-                        handle.block_on(runner.run(func))
-                            .map_err(|e| e.into())
-                    })
-                })
-                .collect();
-
-            doco::libtest_mimic::run(&args, tests).exit();
+            doco::TestRunner::new(async #main_block).run();
         }
     };
 
-    initialization_and_function.into()
+    expanded.into()
 }
 
 /// Annotate an end-to-end test to be run with Doco
@@ -135,7 +97,7 @@ pub fn test(_attr: TokenStream, input: TokenStream) -> TokenStream {
             .join().map_err(|_| doco::anyhow!("failed to run test in isolated thread"))?
         }
 
-        doco::inventory::submit!(crate::TestCase {
+        doco::inventory::submit!(doco::TestCase {
             name: #input_fn_name,
             function: #test_fn_ident
         });

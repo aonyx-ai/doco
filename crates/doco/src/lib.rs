@@ -47,8 +47,8 @@
 pub use anyhow::{anyhow, Context, Error, Result};
 pub use doco_derive::{main, test};
 use getset::Getters;
+#[doc(hidden)]
 pub use inventory;
-pub use libtest_mimic;
 pub use testcontainers::core::WaitFor;
 pub use thirtyfour::By;
 use typed_builder::TypedBuilder;
@@ -66,6 +66,21 @@ mod test_runner;
 
 #[cfg(test)]
 mod test_utils;
+
+/// A test case registered by the `#[doco::test]` macro
+///
+/// Each test case consists of a name and a function that receives a [`Client`] and returns a
+/// [`Result`]. Test cases are collected at link time using the [`inventory`] crate and run by the
+/// [`TestRunner`].
+pub struct TestCase {
+    /// The name of the test
+    pub name: &'static str,
+
+    /// The test function to execute
+    pub function: fn(Client) -> Result<()>,
+}
+
+inventory::collect!(TestCase);
 
 /// Configuration for end-to-end tests with Doco
 ///
