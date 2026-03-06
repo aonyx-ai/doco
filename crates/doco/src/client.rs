@@ -1,9 +1,9 @@
 //! WebDriver client that interacts with the web application
 
-use fantoccini::error::CmdError;
-use fantoccini::Client as WebDriverClient;
 use reqwest::Url;
 use std::ops::Deref;
+use thirtyfour::error::{WebDriverError, WebDriverErrorInner};
+use thirtyfour::WebDriver;
 use typed_builder::TypedBuilder;
 
 /// WebDriver client that interacts with the web application
@@ -12,9 +12,9 @@ use typed_builder::TypedBuilder;
 /// preconfigured to target the server that has been passed to Doco so that users only need to
 /// supply the path that they want to test.
 ///
-/// Internally, the client uses the [fantoccini] crate to interact with the WebDriver server. For
+/// Internally, the client uses the [thirtyfour] crate to interact with the WebDriver server. For
 /// examples on what methods are available on the `Client` and how to interact with the web
-/// application, see the [fantoccini] documentation.
+/// application, see the [thirtyfour] documentation.
 ///
 /// # Example
 ///
@@ -46,7 +46,7 @@ use typed_builder::TypedBuilder;
 /// # }
 /// ```
 ///
-/// [fantoccini]: https://crates.io/crates/fantoccini
+/// [thirtyfour]: https://crates.io/crates/thirtyfour
 /// [webdriver]: https://developer.mozilla.org/en-US/docs/Web/WebDriver
 #[derive(Clone, Debug, TypedBuilder)]
 pub struct Client {
@@ -54,7 +54,7 @@ pub struct Client {
     base_url: Url,
 
     /// The WebDriver client that is used internally
-    client: WebDriverClient,
+    client: WebDriver,
 }
 
 impl Client {
@@ -76,13 +76,17 @@ impl Client {
     ///     Ok(())
     /// }
     /// ```
-    pub async fn goto(&self, path: &str) -> Result<(), CmdError> {
-        self.client.goto(self.base_url.join(path)?.as_str()).await
+    pub async fn goto(&self, path: &str) -> Result<(), WebDriverError> {
+        let url = self
+            .base_url
+            .join(path)
+            .map_err(|e| WebDriverError::from(WebDriverErrorInner::InvalidUrl(e)))?;
+        self.client.goto(url.as_str()).await
     }
 }
 
 impl Deref for Client {
-    type Target = WebDriverClient;
+    type Target = WebDriver;
 
     fn deref(&self) -> &Self::Target {
         &self.client
