@@ -1,11 +1,14 @@
 //! Test runner for Doco's end-to-end tests
 
+use std::future::Future;
+use std::sync::Arc;
+
 use anyhow::Context;
 use testcontainers::core::{Host, IntoContainerPort, WaitFor};
 use testcontainers::runners::AsyncRunner;
 use testcontainers::{ContainerAsync, GenericImage, ImageExt};
 
-use crate::{Client, Doco, Result};
+use crate::{Client, Doco, Result, TestCase};
 
 /// The host name for Docker containers to access the host machine
 ///
@@ -23,8 +26,10 @@ const DOCKER_HOST: &str = "host.docker.internal";
 /// It should not be necessary to use this struct directly. Instead, use the [`doco::main`] and
 /// [`doco::test`] macros to automatically set up the test runner, collect all tests, and pass them
 /// to the runner.
-#[derive(Debug)]
 pub struct TestRunner {
+    /// The tokio runtime used to run async test code
+    rt: tokio::runtime::Runtime,
+
     /// The Doco configuration to use for the tests
     doco: Doco,
 
@@ -33,16 +38,42 @@ pub struct TestRunner {
 }
 
 impl TestRunner {
-    /// Initialize the test runner with the given Doco configuration
-    ///
-    /// This method starts the Selenium container and returns a new `TestRunner` instance. Since
-    /// starting the container can fail, this method returns a `Result` that must be handled.
-    pub async fn init(doco: Doco) -> Result<Self> {
+    /// Build the tokio runtime, run the user's async init block, and initialize the runner.
+    pub fn new(init: impl Future<Output = Doco>) -> Self {
+        let rt = tokio::runtime::Builder::new_multi_thread()
+            .enable_all()
+            .build()
+            .expect("failed to build tokio runtime");
+
+        let doco = rt.block_on(init);
+
         println!("Initializing ephemeral test environment...");
 
-        let selenium = start_selenium().await?;
+        let selenium = rt
+            .block_on(start_selenium())
+            .expect("failed to initialize the test runner");
 
-        Ok(Self { doco, selenium })
+        Self { rt, doco, selenium }
+    }
+
+    /// Collect all registered tests, wrap them as libtest-mimic trials, and run.
+    pub fn run(self) {
+        let runner = Arc::new(self);
+        let args = libtest_mimic::Arguments::from_args();
+
+        let tests: Vec<libtest_mimic::Trial> = inventory::iter::<TestCase>
+            .into_iter()
+            .map(|tc| {
+                let r = Arc::clone(&runner);
+                let handle = runner.rt.handle().clone();
+                let func = tc.function;
+                libtest_mimic::Trial::test(tc.name, move || {
+                    handle.block_on(r.run_test(func)).map_err(|e| e.into())
+                })
+            })
+            .collect();
+
+        libtest_mimic::run(&args, tests).exit();
     }
 
     /// Run the given test in the ephemeral environment
@@ -50,11 +81,7 @@ impl TestRunner {
     /// This method executes a test in a clean, ephemeral environment. First, it starts any
     /// auxiliary services like databases and waits for them to be ready. Then, it starts the
     /// server, configures the WebDriver [`Client`], and calls the test function.
-    ///
-    /// It should not be necessary to use this struct directly. Instead, use the [`doco::main`] and
-    /// [`doco::test`] macros to automatically set up the test runner, collect all tests, and pass
-    /// them to the runner.
-    pub async fn run(&self, name: &str, test: fn(Client) -> Result<()>) -> Result<()> {
+    pub async fn run_test(&self, test: fn(Client) -> Result<()>) -> Result<()> {
         let mut services = Vec::with_capacity(self.doco.services().len());
 
         let mut server = GenericImage::new(self.doco.server().image(), self.doco.server().tag())
@@ -108,12 +135,11 @@ impl TestRunner {
             .client(driver.clone())
             .build();
 
-        println!("{}...", name);
-        let result = test(client);
+        test(client)?;
 
         driver.quit().await.ok();
 
-        result
+        Ok(())
     }
 }
 

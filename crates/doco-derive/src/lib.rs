@@ -40,36 +40,13 @@ pub fn main(_args: TokenStream, input: TokenStream) -> TokenStream {
     let main_fn = parse_macro_input!(input as ItemFn);
     let main_block = main_fn.block;
 
-    // Generate code that initializes the asynchronous runtime, the inventory for tests, and then
-    // sets up the given function as the entry point for the program
-    let initialization_and_function = quote! {
-        #[derive(Clone, Debug)]
-        struct TestCase {
-            pub name: &'static str,
-            pub function: fn(doco::Client) -> doco::Result<()>,
-        }
-
-        doco::inventory::collect!(TestCase);
-
-        #[tokio::main]
-        async fn main() {
-            let doco: doco::Doco = #main_block;
-
-            let test_runner = doco::TestRunner::init(doco).await.expect("failed to initialize the test runner");
-            let tests = doco::inventory::iter::<TestCase>.into_iter().count();
-
-            println!("Running {} tests...\n", tests);
-
-            for test in doco::inventory::iter::<TestCase> {
-                // TODO: Collect results, report them, and remove the `expect` statement
-                test_runner.run(test.name, test.function).await.expect("failed to run test");
-            }
-
-            println!("\nDone.");
+    let expanded = quote! {
+        fn main() {
+            doco::TestRunner::new(async #main_block).run();
         }
     };
 
-    initialization_and_function.into()
+    expanded.into()
 }
 
 /// Annotate an end-to-end test to be run with Doco
@@ -120,7 +97,7 @@ pub fn test(_attr: TokenStream, input: TokenStream) -> TokenStream {
             .join().map_err(|_| doco::anyhow!("failed to run test in isolated thread"))?
         }
 
-        doco::inventory::submit!(crate::TestCase {
+        doco::inventory::submit!(doco::TestCase {
             name: #input_fn_name,
             function: #test_fn_ident
         });
