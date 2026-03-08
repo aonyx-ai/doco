@@ -71,9 +71,24 @@ Doco is still in an early stage of development and has some known limitations.
 These will be addressed in future releases.
 
 - Rust is the only supported language for writing tests.
-- Doco only supports a fail-fast mode and stops after the first failing test.
 - Each test must have a globally unique name.
 - Errors from Docker are not reported properly yet.
+
+## Test runner flags
+
+Doco uses [libtest-mimic] under the hood, so it supports the standard test
+runner flags you're used to:
+
+- `<FILTER>` — only run tests whose name contains this string
+- `--exact` — match test names exactly instead of by substring
+- `--skip <FILTER>` — skip tests whose name contains this string
+- `--ignored` — run only ignored tests
+- `--include-ignored` — run both ignored and non-ignored tests
+- `--list` — list all tests without running them
+- `--quiet` / `-q` — display one character per test instead of one line
+- `--test-threads <N>` — number of parallel test threads
+
+[libtest-mimic]: https://crates.io/crates/libtest-mimic
 
 ## License
 
