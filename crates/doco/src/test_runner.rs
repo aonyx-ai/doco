@@ -203,6 +203,44 @@ mod tests {
     }
 
     #[test]
+    fn list_flag_prints_test_names() {
+        let trials = vec![
+            libtest_mimic::Trial::test("alpha_test", || Ok(())),
+            libtest_mimic::Trial::test("beta_test", || Ok(())),
+        ];
+
+        let args = libtest_mimic::Arguments {
+            list: true,
+            ..Default::default()
+        };
+
+        let conclusion = libtest_mimic::run(&args, trials);
+
+        // --list exits without running anything, so no tests pass or fail
+        assert_eq!(conclusion.num_passed, 0);
+        assert_eq!(conclusion.num_failed, 0);
+    }
+
+    #[test]
+    fn filter_selects_matching_tests() {
+        let trials = vec![
+            libtest_mimic::Trial::test("alpha_test", || Ok(())),
+            libtest_mimic::Trial::test("beta_test", || Err("should not run".into())),
+        ];
+
+        let args = libtest_mimic::Arguments {
+            filter: Some("alpha".into()),
+            ..Default::default()
+        };
+
+        let conclusion = libtest_mimic::run(&args, trials);
+
+        assert_eq!(conclusion.num_passed, 1);
+        assert_eq!(conclusion.num_failed, 0);
+        assert_eq!(conclusion.num_filtered_out, 1);
+    }
+
+    #[test]
     fn trait_send() {
         assert_send::<TestRunner>();
     }
