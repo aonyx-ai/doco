@@ -225,9 +225,7 @@ mod tests {
     fn filter_selects_matching_tests() {
         let trials = vec![
             libtest_mimic::Trial::test("alpha_test", || Ok(())),
-            libtest_mimic::Trial::test("beta_test", || {
-                Err("should not run".into())
-            }),
+            libtest_mimic::Trial::test("beta_test", || Err("should not run".into())),
         ];
 
         let args = libtest_mimic::Arguments {

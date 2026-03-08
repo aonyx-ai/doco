@@ -11,15 +11,14 @@ Versioning].
 
 ### Changed
 
-- Migrated WebDriver client from [fantoccini] to [thirtyfour]. The `Client`
-  type now derefs to `thirtyfour::WebDriver` instead of
-  `fantoccini::Client`. Users who imported fantoccini types directly will
-  need to switch to the thirtyfour equivalents.
+- Migrated WebDriver client from [fantoccini] to [thirtyfour]. The `Client` type
+  now derefs to `thirtyfour::WebDriver` instead of `fantoccini::Client`. Users
+  who imported fantoccini types directly will need to switch to the thirtyfour
+  equivalents.
 - Switched from a custom test loop to [libtest-mimic]. Tests now support
   standard runner flags like `--list`, `--skip`, `--ignored`, `--exact`,
   `--test-threads`, and name filtering out of the box.
-- Updated `testcontainers` to 0.27, `reqwest` to 0.13, `typed-builder` to
-  0.23.
+- Updated `testcontainers` to 0.27, `reqwest` to 0.13, `typed-builder` to 0.23.
 
 ### Internal
 
