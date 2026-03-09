@@ -1,7 +1,7 @@
 //! Auxiliary service required by the server
 
 use getset::{CopyGetters, Getters};
-use testcontainers::core::WaitFor;
+use testcontainers::core::{Mount, WaitFor};
 use typed_builder::TypedBuilder;
 
 use crate::environment::Variable;
@@ -50,6 +50,26 @@ pub struct Service {
     #[getset(get = "pub")]
     envs: Vec<Variable>,
 
+    /// Filesystem mounts for the service's container
+    #[builder(via_mutators(init = Vec::new()), mutators(
+        /// Adds a filesystem mount to the service's container
+        pub fn mount(mut self, mount: Mount) {
+            self.mounts.push(mount);
+        }
+    ))]
+    #[getset(get = "pub")]
+    mounts: Vec<Mount>,
+
+    /// Arguments for the container's command, overriding the image default
+    #[builder(via_mutators(init = Vec::new()), mutators(
+        /// Adds an argument to the container's command
+        pub fn cmd_arg(mut self, arg: impl Into<String>) {
+            self.cmd.push(arg.into());
+        }
+    ))]
+    #[getset(get = "pub")]
+    cmd: Vec<String>,
+
     /// An optional condition to wait until the service has properly started
     #[builder(default, setter(into))]
     #[getset(get = "pub")]
@@ -63,6 +83,18 @@ mod tests {
     use super::*;
 
     #[test]
+    fn cmd_arg_collects_args() {
+        let service = Service::builder()
+            .image("postgres")
+            .tag("latest")
+            .cmd_arg("--config")
+            .cmd_arg("/etc/postgres.conf")
+            .build();
+
+        assert_eq!(2, service.cmd.len());
+    }
+
+    #[test]
     fn env_collects_variables() {
         let service = Service::builder()
             .image("postgres")
@@ -73,6 +105,18 @@ mod tests {
             .build();
 
         assert_eq!(3, service.envs.len());
+    }
+
+    #[test]
+    fn mount_collects_mounts() {
+        let service = Service::builder()
+            .image("postgres")
+            .tag("latest")
+            .mount(Mount::bind_mount("/host/data", "/var/lib/postgresql/data"))
+            .mount(Mount::bind_mount("/host/config", "/etc/postgresql"))
+            .build();
+
+        assert_eq!(2, service.mounts.len());
     }
 
     #[test]
