@@ -57,12 +57,14 @@ pub use crate::client::Client;
 pub use crate::server::Server;
 pub use crate::service::Service;
 pub use crate::test_runner::TestRunner;
+pub use crate::viewport::Viewport;
 
 mod client;
 mod environment;
 mod server;
 mod service;
 mod test_runner;
+mod viewport;
 
 #[cfg(test)]
 mod test_utils;
@@ -126,6 +128,14 @@ pub struct Doco {
     #[builder(default = std::env::var("CI").is_ok())]
     #[getset(get = "pub")]
     headless: bool,
+
+    /// The browser viewport dimensions
+    ///
+    /// When set, the browser window is resized to these dimensions before each test runs. This
+    /// ensures consistent rendering for visual regression testing.
+    #[builder(default, setter(strip_option))]
+    #[getset(get = "pub")]
+    viewport: Option<Viewport>,
 }
 
 #[cfg(test)]

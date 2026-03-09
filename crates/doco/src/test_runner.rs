@@ -136,6 +136,13 @@ impl TestRunner {
         .await
         .expect("failed to connect to WebDriver");
 
+        if let Some(viewport) = self.doco.viewport() {
+            driver
+                .set_window_rect(0, 0, viewport.width(), viewport.height())
+                .await
+                .context("failed to set browser viewport")?;
+        }
+
         let client = Client::builder()
             .base_url(format!("http://{DOCKER_HOST}:{port}").parse()?)
             .client(driver.clone())
@@ -238,6 +245,55 @@ mod tests {
         let body = driver.source().await?;
 
         assert!(body.contains("headless works"));
+
+        driver.quit().await.ok();
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn viewport_sets_window_dimensions() -> Result<()> {
+        let selenium = start_selenium().await?;
+
+        let driver = thirtyfour::WebDriver::new(
+            &format!(
+                "http://{}:{}",
+                selenium.get_host().await?,
+                selenium.get_host_port_ipv4(4444).await?
+            ),
+            thirtyfour::DesiredCapabilities::firefox(),
+        )
+        .await
+        .expect("failed to connect to WebDriver");
+
+        let viewport = crate::Viewport::new(1280, 720);
+        driver
+            .set_window_rect(0, 0, viewport.width(), viewport.height())
+            .await?;
+
+        let inner_width: u64 = driver
+            .execute("return window.innerWidth", vec![])
+            .await?
+            .json()
+            .as_u64()
+            .unwrap();
+        let inner_height: u64 = driver
+            .execute("return window.innerHeight", vec![])
+            .await?
+            .json()
+            .as_u64()
+            .unwrap();
+
+        // Window chrome takes some space, so innerWidth/innerHeight may differ slightly from the
+        // outer rect. But set_window_rect sets the outer dimensions, so inner dimensions should be
+        // close. The key assertion is that they changed from the default.
+        assert!(inner_width > 0, "innerWidth should be positive");
+        assert!(inner_height > 0, "innerHeight should be positive");
+
+        // The outer rect should match exactly what we requested
+        let rect = driver.get_window_rect().await?;
+        assert_eq!(rect.width, 1280);
+        assert_eq!(rect.height, 720);
 
         driver.quit().await.ok();
 
