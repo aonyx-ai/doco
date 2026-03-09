@@ -56,6 +56,7 @@ use typed_builder::TypedBuilder;
 pub use crate::client::Client;
 pub use crate::server::Server;
 pub use crate::service::Service;
+pub use crate::session::Session;
 pub use crate::test_runner::TestRunner;
 pub use crate::viewport::Viewport;
 
@@ -63,6 +64,7 @@ mod client;
 mod environment;
 mod server;
 mod service;
+mod session;
 mod test_runner;
 mod viewport;
 
@@ -136,6 +138,43 @@ pub struct Doco {
     #[builder(default, setter(strip_option))]
     #[getset(get = "pub")]
     viewport: Option<Viewport>,
+}
+
+impl Doco {
+    /// Connect to a long-lived browser session
+    ///
+    /// Starts the Selenium browser, the application server, and any configured services in Docker
+    /// containers, then returns a [`Session`] with a ready-to-use [`Client`]. The session keeps
+    /// all containers alive until it is dropped or [`Session::close()`] is called.
+    ///
+    /// Unlike the test runner, which creates a fresh environment per test, `connect()` creates a
+    /// single session that can be reused across many operations. This is useful for scenarios like
+    /// visual regression testing where you want to visit many pages without the overhead of
+    /// restarting containers each time.
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use doco::{Doco, Server};
+    ///
+    /// # async fn example() -> doco::Result<()> {
+    /// let doco = Doco::builder()
+    ///     .server(Server::builder().image("my-app").tag("latest").port(8080).build())
+    ///     .build();
+    ///
+    /// let session = doco.connect().await?;
+    ///
+    /// session.goto("/").await?;
+    /// let body = session.source().await?;
+    /// assert!(body.contains("Hello"));
+    ///
+    /// session.close().await?;
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub async fn connect(&self) -> Result<Session> {
+        Session::connect(self).await
+    }
 }
 
 #[cfg(test)]
