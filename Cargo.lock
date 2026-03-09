@@ -548,7 +548,7 @@ dependencies = [
 
 [[package]]
 name = "doco"
-version = "0.2.2"
+version = "0.2.3"
 dependencies = [
  "anyhow",
  "axum",
@@ -565,7 +565,7 @@ dependencies = [
 
 [[package]]
 name = "doco-derive"
-version = "0.2.2"
+version = "0.2.3"
 dependencies = [
  "quote",
  "syn",

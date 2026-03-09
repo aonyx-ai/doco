@@ -11,7 +11,7 @@ readme = "../../README.md"
 
 [dependencies]
 anyhow = "1.0.86"
-doco-derive = { path = "../doco-derive", version = "0.2.2" }
+doco-derive = { path = "../doco-derive", version = "0.2.3" }
 thirtyfour = "0.36"
 getset = "0.1.2"
 inventory = "0.3.15"

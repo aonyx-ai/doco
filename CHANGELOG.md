@@ -9,6 +9,18 @@ Versioning].
 
 ## [Unreleased]
 
+## [0.2.3] - 2026-03-09
+
+### Added
+
+- Filesystem mount support on `Server` and `Service` via `.mount()`. Enables
+  mounting host directories into containers — for example, a pre-built dist
+  directory into a lightweight web server image.
+- Command override support on `Server` and `Service` via `.cmd_arg()`. Allows
+  customizing the container entrypoint arguments.
+- Re-exported `Mount` and `AccessMode` types from testcontainers for
+  convenience.
+
 ## [0.2.2] - 2026-03-09
 
 ### Added
@@ -60,6 +72,7 @@ Versioning].
 
 Initial release of the `doco` and `doco-derive` crates
 
+[0.2.3]: https://github.com/otterbuild/doco/releases/tag/0.2.3
 [0.2.2]: https://github.com/otterbuild/doco/releases/tag/0.2.2
 [0.2.1]: https://github.com/otterbuild/doco/releases/tag/0.2.1
 [0.2.0]: https://github.com/otterbuild/doco/releases/tag/0.2.0
