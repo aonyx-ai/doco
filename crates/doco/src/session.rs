@@ -15,73 +15,89 @@ use crate::{Client, Doco, Result};
 /// The host name for Docker containers to access the host machine
 const DOCKER_HOST: &str = "host.docker.internal";
 
-/// Running application containers with a resolved base URL
+/// A running service container with its resolved network address
 ///
-/// Holds the server and service containers alive and exposes the base URL that the browser should
-/// target. Created by [`Environment::start()`] and consumed by [`Session`] construction.
-struct Environment {
-    /// The base URL of the running application (e.g. `http://host.docker.internal:32789`)
-    base_url: Url,
+/// Created by starting a [`Service`](crate::Service) configuration. The container is kept alive
+/// by ownership and stopped when dropped.
+struct RunningService {
+    /// The running container
+    container: ContainerAsync<GenericImage>,
 
-    /// The application server container
-    server: ContainerAsync<GenericImage>,
-
-    /// Auxiliary service containers (databases, caches, etc.)
-    services: Vec<ContainerAsync<GenericImage>>,
+    /// The service image name, used to register a DNS host entry on the server
+    image: String,
 }
 
-impl Environment {
-    /// Start the application server and any configured services
-    ///
-    /// Launches service containers first (so their addresses can be linked into the server), then
-    /// starts the server container and resolves its host-accessible port into a base URL.
-    async fn start(doco: &Doco) -> Result<Self> {
-        let mut services = Vec::with_capacity(doco.services().len());
+impl RunningService {
+    /// Start a service container from its configuration
+    async fn start(config: &crate::Service) -> Result<Self> {
+        let mut image = GenericImage::new(config.image(), config.tag());
 
-        let mut server = GenericImage::new(doco.server().image(), doco.server().tag())
-            .with_exposed_port(doco.server().port().tcp());
+        if let Some(wait) = config.wait() {
+            image = image.with_wait_for(wait.clone());
+        }
 
-        if let Some(wait) = doco.server().wait() {
+        let mut image = image.with_host("doco", Host::HostGateway);
+
+        for env in config.envs() {
+            image = image.with_env_var(env.name().clone(), env.value().clone());
+        }
+
+        let container = image.start().await?;
+
+        Ok(Self {
+            container,
+            image: config.image().clone(),
+        })
+    }
+
+    /// The bridge IP address for linking this service to the server container
+    async fn bridge_ip(&self) -> Result<std::net::IpAddr> {
+        self.container
+            .get_bridge_ip_address()
+            .await
+            .context("failed to get bridge IP for service")
+    }
+}
+
+/// A running server container with its resolved base URL
+///
+/// Created by starting a [`Server`](crate::Server) configuration along with any
+/// [`RunningService`]s that it depends on. The container is kept alive by ownership.
+struct RunningServer {
+    /// The running container
+    container: ContainerAsync<GenericImage>,
+
+    /// The base URL accessible from the host (e.g. `http://host.docker.internal:32789`)
+    base_url: Url,
+}
+
+impl RunningServer {
+    /// Start the server container, linking it to any running services
+    async fn start(config: &crate::Server, services: &[RunningService]) -> Result<Self> {
+        let mut server =
+            GenericImage::new(config.image(), config.tag()).with_exposed_port(config.port().tcp());
+
+        if let Some(wait) = config.wait() {
             server = server.with_wait_for(wait.clone());
         }
 
         let mut server = server.with_host(DOCKER_HOST, Host::HostGateway);
 
-        for service in doco.services() {
-            let mut image = GenericImage::new(service.image(), service.tag());
-
-            if let Some(wait) = service.wait() {
-                image = image.with_wait_for(wait.clone());
-            }
-
-            let mut image = image.with_host("doco", Host::HostGateway);
-
-            for env in service.envs() {
-                image = image.with_env_var(env.name().clone(), env.value().clone());
-            }
-
-            let container = image.start().await?;
-
-            server = server.with_host(
-                service.image(),
-                Host::Addr(container.get_bridge_ip_address().await?),
-            );
-
-            services.push(container);
+        for service in services {
+            server = server.with_host(&service.image, Host::Addr(service.bridge_ip().await?));
         }
 
-        for env in doco.server().envs() {
+        for env in config.envs() {
             server = server.with_env_var(env.name().clone(), env.value().clone());
         }
 
-        let server = server.start().await?;
-        let port = server.get_host_port_ipv4(doco.server().port()).await?;
+        let container = server.start().await?;
+        let port = container.get_host_port_ipv4(config.port()).await?;
         let base_url = format!("http://{DOCKER_HOST}:{port}").parse()?;
 
         Ok(Self {
+            container,
             base_url,
-            server,
-            services,
         })
     }
 }
@@ -187,11 +203,16 @@ impl Session {
         doco: &Doco,
         selenium: Arc<ContainerAsync<GenericImage>>,
     ) -> Result<Self> {
-        let env = Environment::start(doco).await?;
+        let mut services = Vec::with_capacity(doco.services().len());
+        for config in doco.services() {
+            services.push(RunningService::start(config).await?);
+        }
+
+        let server = RunningServer::start(doco.server(), &services).await?;
         let driver = create_driver(&selenium, doco).await?;
 
         let client = Client::builder()
-            .base_url(env.base_url)
+            .base_url(server.base_url)
             .client(driver.clone())
             .build();
 
@@ -199,8 +220,8 @@ impl Session {
             client,
             driver,
             _selenium: selenium,
-            _server: env.server,
-            _services: env.services,
+            _server: server.container,
+            _services: services.into_iter().map(|s| s.container).collect(),
         })
     }
 
