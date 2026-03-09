@@ -42,6 +42,14 @@ impl RunningService {
             image = image.with_env_var(env.name().clone(), env.value().clone());
         }
 
+        for mount in config.mounts() {
+            image = image.with_mount(mount.clone());
+        }
+
+        if !config.cmd().is_empty() {
+            image = image.with_cmd(config.cmd().clone());
+        }
+
         let container = image.start().await?;
 
         Ok(Self {
@@ -89,6 +97,14 @@ impl RunningServer {
 
         for env in config.envs() {
             server = server.with_env_var(env.name().clone(), env.value().clone());
+        }
+
+        for mount in config.mounts() {
+            server = server.with_mount(mount.clone());
+        }
+
+        if !config.cmd().is_empty() {
+            server = server.with_cmd(config.cmd().clone());
         }
 
         let container = server.start().await?;

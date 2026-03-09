@@ -1,7 +1,7 @@
 //! Server for the web application that is being tested
 
 use getset::{CopyGetters, Getters};
-use testcontainers::core::WaitFor;
+use testcontainers::core::{Mount, WaitFor};
 use typed_builder::TypedBuilder;
 
 use crate::environment::Variable;
@@ -35,6 +35,26 @@ pub struct Server {
     #[getset(get = "pub")]
     envs: Vec<Variable>,
 
+    /// Filesystem mounts for the server's container
+    #[builder(via_mutators(init = Vec::new()), mutators(
+        /// Adds a filesystem mount to the server's container
+        pub fn mount(mut self, mount: Mount) {
+            self.mounts.push(mount);
+        }
+    ))]
+    #[getset(get = "pub")]
+    mounts: Vec<Mount>,
+
+    /// Arguments for the container's command, overriding the image default
+    #[builder(via_mutators(init = Vec::new()), mutators(
+        /// Adds an argument to the container's command
+        pub fn cmd_arg(mut self, arg: impl Into<String>) {
+            self.cmd.push(arg.into());
+        }
+    ))]
+    #[getset(get = "pub")]
+    cmd: Vec<String>,
+
     /// An optional condition to wait until the server has properly started
     #[builder(default, setter(into))]
     #[getset(get = "pub")]
@@ -48,6 +68,19 @@ mod tests {
     use super::*;
 
     #[test]
+    fn cmd_arg_collects_args() {
+        let server = Server::builder()
+            .image("doco")
+            .tag("latest")
+            .port(8080)
+            .cmd_arg("--config")
+            .cmd_arg("/etc/app.toml")
+            .build();
+
+        assert_eq!(2, server.cmd.len());
+    }
+
+    #[test]
     fn env_collects_variables() {
         let server = Server::builder()
             .image("doco")
@@ -58,6 +91,19 @@ mod tests {
             .build();
 
         assert_eq!(2, server.envs.len());
+    }
+
+    #[test]
+    fn mount_collects_mounts() {
+        let server = Server::builder()
+            .image("doco")
+            .tag("latest")
+            .port(8080)
+            .mount(Mount::bind_mount("/host/path", "/container/path"))
+            .mount(Mount::bind_mount("/host/other", "/container/other"))
+            .build();
+
+        assert_eq!(2, server.mounts.len());
     }
 
     #[test]

@@ -49,7 +49,7 @@ pub use doco_derive::{main, test};
 use getset::Getters;
 #[doc(hidden)]
 pub use inventory;
-pub use testcontainers::core::WaitFor;
+pub use testcontainers::core::{AccessMode, Mount, WaitFor};
 pub use thirtyfour::By;
 use typed_builder::TypedBuilder;
 
