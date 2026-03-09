@@ -1,0 +1,44 @@
+---
+name: Publish
+
+"on":
+  release:
+    types: [released]
+
+permissions: {}
+
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: true
+
+jobs:
+  publish:
+    name: crates.io
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      id-token: write # Required for OIDC authentication
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # 6.0.2
+        with:
+          persist-credentials: false
+
+      - name: Install Flox
+        uses: flox/install-flox-action@9428713e8d3883274c334b4b95b8830beebd24d2 # 2.3.0
+
+      - name: Remove Flox installer (if it exists)
+        run: rm -f flox.x86_64-linux.deb
+
+      - name: Authenticate with crates.io
+        id: auth
+        uses: rust-lang/crates-io-auth-action@b7e9a28eded4986ec6b1fa40eeee8f8f165559ec # 1.0.3
+
+      - name: Publish crate
+        uses: flox/activate-action@410568008895a0f2e09a34bbd9523f8ef1f2d292 # 1.1.0
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ steps.auth.outputs.token }}
+        with:
+          command: just publish

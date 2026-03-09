@@ -89,5 +89,4 @@ test-coverage:
 
 # Publish crates to crates.io
 publish:
-    cargo publish -p doco-derive -v --all-features
-    cargo publish -p doco -v --all-features
+    cargo publish --all-features --verbose --workspace
