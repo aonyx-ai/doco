@@ -7,6 +7,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog], and this project adheres to [Semantic
 Versioning].
 
+## [Unreleased]
+
+### Added
+
+- Viewport configuration via `Doco::builder().viewport(Viewport::new(w, h))`.
+  When set, the browser window is resized before each test runs.
+
 ## [0.2.0] - 2026-03-08
 
 ### Changed
