@@ -121,6 +121,14 @@ pub struct Doco {
     #[getset(get = "pub")]
     services: Vec<Service>,
 
+    /// Whether to run the browser in headless mode
+    ///
+    /// When `true`, Firefox runs without a visible window. Defaults to auto-detection: headless
+    /// when the `CI` environment variable is set, headed otherwise.
+    #[builder(default = std::env::var("CI").is_ok())]
+    #[getset(get = "pub")]
+    headless: bool,
+
     /// The browser viewport dimensions
     ///
     /// When set, the browser window is resized to these dimensions before each test runs. This

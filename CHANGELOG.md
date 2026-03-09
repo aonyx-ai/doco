@@ -11,6 +11,8 @@ Versioning].
 
 ### Added
 
+- Headless browser mode via `Doco::builder().headless(true)`. Defaults to
+  auto-detection based on the `CI` environment variable.
 - Viewport configuration via `Doco::builder().viewport(Viewport::new(w, h))`.
   When set, the browser window is resized before each test runs.
 

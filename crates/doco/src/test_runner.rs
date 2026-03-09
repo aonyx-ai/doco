@@ -119,13 +119,19 @@ impl TestRunner {
         let server = server.start().await?;
         let port = server.get_host_port_ipv4(self.doco.server().port()).await?;
 
+        let mut caps = thirtyfour::DesiredCapabilities::firefox();
+        if *self.doco.headless() {
+            caps.set_headless()
+                .context("failed to set headless capability")?;
+        }
+
         let driver = thirtyfour::WebDriver::new(
             &format!(
                 "http://{}:{}",
                 self.selenium.get_host().await?,
                 self.selenium.get_host_port_ipv4(4444).await?
             ),
-            thirtyfour::DesiredCapabilities::firefox(),
+            caps,
         )
         .await
         .expect("failed to connect to WebDriver");
@@ -203,6 +209,42 @@ mod tests {
         let body = driver.source().await?;
 
         assert!(body.contains("hello from the test"));
+
+        driver.quit().await.ok();
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn headless_browser_can_navigate() -> Result<()> {
+        let listener = TcpListener::bind("0.0.0.0:0").await?;
+        let port = listener.local_addr()?.port();
+
+        let app = Router::new().route("/", get(|| async { "headless works" }));
+        tokio::spawn(async { axum::serve(listener, app).await });
+
+        let selenium = start_selenium().await?;
+
+        let mut caps = thirtyfour::DesiredCapabilities::firefox();
+        caps.set_headless()?;
+
+        let driver = thirtyfour::WebDriver::new(
+            &format!(
+                "http://{}:{}",
+                selenium.get_host().await?,
+                selenium.get_host_port_ipv4(4444).await?
+            ),
+            caps,
+        )
+        .await
+        .expect("failed to connect to headless WebDriver");
+
+        driver
+            .goto(&format!("http://{DOCKER_HOST}:{port}/"))
+            .await?;
+        let body = driver.source().await?;
+
+        assert!(body.contains("headless works"));
 
         driver.quit().await.ok();
 
