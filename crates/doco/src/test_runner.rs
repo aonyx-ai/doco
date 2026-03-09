@@ -3,19 +3,7 @@
 use std::future::Future;
 use std::sync::Arc;
 
-use anyhow::Context;
-use testcontainers::core::{Host, IntoContainerPort, WaitFor};
-use testcontainers::runners::AsyncRunner;
-use testcontainers::{ContainerAsync, GenericImage, ImageExt};
-
-use crate::{Client, Doco, Result, TestCase};
-
-/// The host name for Docker containers to access the host machine
-///
-/// Docker containers can access the host using this internal hostname. The hostname is
-/// automatically set on macOS and Windows hosts, but on Linux hosts it must be set explicitly by
-/// Doco.
-const DOCKER_HOST: &str = "host.docker.internal";
+use crate::{Client, Doco, Result, Session, TestCase};
 
 /// Test runner for Doco's end-to-end tests
 ///
@@ -33,8 +21,8 @@ pub struct TestRunner {
     /// The Doco configuration to use for the tests
     doco: Doco,
 
-    /// The running Selenium container to which the WebDriver client connects
-    selenium: ContainerAsync<GenericImage>,
+    /// The running Selenium container, shared across tests via [`Session`]
+    selenium: Arc<testcontainers::ContainerAsync<testcontainers::GenericImage>>,
 }
 
 impl TestRunner {
@@ -50,10 +38,14 @@ impl TestRunner {
         println!("Initializing ephemeral test environment...");
 
         let selenium = rt
-            .block_on(start_selenium())
+            .block_on(Session::start_selenium())
             .expect("failed to initialize the test runner");
 
-        Self { rt, doco, selenium }
+        Self {
+            rt,
+            doco,
+            selenium: Arc::new(selenium),
+        }
     }
 
     /// Collect all registered tests, wrap them as libtest-mimic trials, and run.
@@ -82,93 +74,15 @@ impl TestRunner {
     /// auxiliary services like databases and waits for them to be ready. Then, it starts the
     /// server, configures the WebDriver [`Client`], and calls the test function.
     pub async fn run_test(&self, test: fn(Client) -> Result<()>) -> Result<()> {
-        let mut services = Vec::with_capacity(self.doco.services().len());
-
-        let mut server = GenericImage::new(self.doco.server().image(), self.doco.server().tag())
-            .with_exposed_port(self.doco.server().port().tcp());
-
-        if let Some(wait) = self.doco.server.wait() {
-            server = server.with_wait_for(wait.clone());
-        }
-
-        let mut server = server.with_host(DOCKER_HOST, Host::HostGateway);
-
-        for service in self.doco.services() {
-            let mut image = GenericImage::new(service.image(), service.tag());
-
-            if let Some(wait) = service.wait() {
-                image = image.with_wait_for(wait.clone());
-            }
-
-            let mut image = image.with_host("doco", Host::HostGateway);
-
-            for env in service.envs() {
-                image = image.with_env_var(env.name().clone(), env.value().clone());
-            }
-
-            let container = image.start().await?;
-
-            server = server.with_host(
-                service.image(),
-                Host::Addr(container.get_bridge_ip_address().await?),
-            );
-
-            services.push(container);
-        }
-
-        let server = server.start().await?;
-        let port = server.get_host_port_ipv4(self.doco.server().port()).await?;
-
-        let mut caps = thirtyfour::DesiredCapabilities::firefox();
-        if *self.doco.headless() {
-            caps.set_headless()
-                .context("failed to set headless capability")?;
-        }
-
-        let driver = thirtyfour::WebDriver::new(
-            &format!(
-                "http://{}:{}",
-                self.selenium.get_host().await?,
-                self.selenium.get_host_port_ipv4(4444).await?
-            ),
-            caps,
-        )
-        .await
-        .expect("failed to connect to WebDriver");
-
-        if let Some(viewport) = self.doco.viewport() {
-            driver
-                .set_window_rect(0, 0, viewport.width(), viewport.height())
-                .await
-                .context("failed to set browser viewport")?;
-        }
-
-        let client = Client::builder()
-            .base_url(format!("http://{DOCKER_HOST}:{port}").parse()?)
-            .client(driver.clone())
-            .build();
+        let session = Session::with_selenium(&self.doco, Arc::clone(&self.selenium)).await?;
+        let client = session.client().clone();
 
         test(client)?;
 
-        driver.quit().await.ok();
+        session.close().await?;
 
         Ok(())
     }
-}
-
-/// Start the Selenium container
-///
-/// This function starts the Selenium container, waits for it to be ready, and then returns a
-/// reference to the running container. For compatibility between macOS, Linux, and Windows, the
-/// [`DOCKER_HOST`] is set explicitly on all platforms.
-async fn start_selenium() -> Result<ContainerAsync<GenericImage>> {
-    GenericImage::new("selenium/standalone-firefox", "latest")
-        .with_exposed_port(4444.tcp())
-        .with_wait_for(WaitFor::message_on_stdout("Started Selenium Standalone"))
-        .with_host(DOCKER_HOST, Host::HostGateway)
-        .start()
-        .await
-        .context("failed to start Selenium container")
 }
 
 #[cfg(test)]
@@ -190,7 +104,7 @@ mod tests {
         let app = Router::new().route("/", get(|| async { "hello from the test" }));
         tokio::spawn(async { axum::serve(listener, app).await });
 
-        let selenium = start_selenium().await?;
+        let selenium = Session::start_selenium().await?;
 
         let driver = thirtyfour::WebDriver::new(
             &format!(
@@ -204,7 +118,7 @@ mod tests {
         .expect("failed to connect to WebDriver");
 
         driver
-            .goto(&format!("http://{DOCKER_HOST}:{port}/"))
+            .goto(&format!("http://host.docker.internal:{port}/"))
             .await?;
         let body = driver.source().await?;
 
@@ -223,7 +137,7 @@ mod tests {
         let app = Router::new().route("/", get(|| async { "headless works" }));
         tokio::spawn(async { axum::serve(listener, app).await });
 
-        let selenium = start_selenium().await?;
+        let selenium = Session::start_selenium().await?;
 
         let mut caps = thirtyfour::DesiredCapabilities::firefox();
         caps.set_headless()?;
@@ -240,7 +154,7 @@ mod tests {
         .expect("failed to connect to headless WebDriver");
 
         driver
-            .goto(&format!("http://{DOCKER_HOST}:{port}/"))
+            .goto(&format!("http://host.docker.internal:{port}/"))
             .await?;
         let body = driver.source().await?;
 
@@ -253,7 +167,7 @@ mod tests {
 
     #[tokio::test]
     async fn viewport_sets_window_dimensions() -> Result<()> {
-        let selenium = start_selenium().await?;
+        let selenium = Session::start_selenium().await?;
 
         let driver = thirtyfour::WebDriver::new(
             &format!(

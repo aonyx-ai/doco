@@ -9,6 +9,21 @@ Versioning].
 
 ## [Unreleased]
 
+### Added
+
+- `Doco::connect()` method that returns a long-lived `Session` with a
+  ready-to-use `Client`. Unlike the test runner which creates a fresh
+  environment per test, `connect()` creates a single session that can be reused
+  across many operations — useful for visual regression testing and custom test
+  harnesses.
+- `Session` type that holds a `Client` and keeps all containers alive via
+  ownership. Derefs to `Client` for ergonomic access to WebDriver methods.
+
+### Changed
+
+- Refactored `TestRunner` to use `Session` internally, removing duplicated
+  container startup logic.
+
 ## [0.2.1] - 2026-03-09
 
 ### Added
