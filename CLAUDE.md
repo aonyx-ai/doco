@@ -636,6 +636,39 @@ We write commit messages inspired by [tbaggery][tbaggery]:
 Create pull requests using `gh pr create --fill --assignee @me` to derive the
 title and body from the commit message and assign the PR to yourself.
 
+#### Labels
+
+Pull requests must be labeled for release note categorization. Area labels
+(`A-*`) indicate the affected component. Release labels (`R-*`) control how the
+PR appears in auto-generated release notes:
+
+| Label          | Release notes section |
+| -------------- | --------------------- |
+| `R-added`      | Added                 |
+| `R-changed`    | Changed               |
+| `R-deprecated` | Deprecated            |
+| `R-removed`    | Removed               |
+| `R-fixed`      | Fixed                 |
+| `R-security`   | Security              |
+| `R-ignore`     | Excluded              |
+
+Area labels: `A-doco`, `A-derive`, `A-docs`, `A-github-actions`.
+
+### Releases
+
+Releases follow [Keep a Changelog][keep-a-changelog] and [Semantic
+Versioning][semver].
+
+1. Update `CHANGELOG.md`: move items from `[Unreleased]` into a new version
+   section dated today.
+2. Bump the version in the root `Cargo.toml` `[workspace.package]` and in
+   `crates/doco/Cargo.toml` (the `doco-derive` dependency version).
+3. Run `cargo check` to update `Cargo.lock`.
+4. Commit, open a PR, and merge.
+5. Create a GitHub release with tag `X.Y.Z` (no `v` prefix) targeting main. The
+   release workflow automatically publishes to crates.io (`just publish` runs
+   `doco-derive` first, then `doco`).
+
 ---
 
 ## Acknowledgments
@@ -644,6 +677,8 @@ This `CLAUDE.md` file was adopted from [nextest's AGENTS.md][nextest-agents],
 which is published under the Apache-2.0 or MIT license.
 
 [flox]: https://flox.dev
+[keep-a-changelog]: https://keepachangelog.com/en/1.0.0/
 [nextest-agents]: https://github.com/nextest-rs/nextest/blob/main/AGENTS.md
+[semver]: https://semver.org/spec/v2.0.0.html
 [tbaggery]:
   https://tbaggery.com/2008/04/19/a-note-about-git-commit-messages.html
