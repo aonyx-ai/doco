@@ -12,7 +12,7 @@ use proc_macro::TokenStream;
 use quote::{format_ident, quote};
 use syn::{parse_macro_input, ItemFn};
 
-/// Collect and run the end-to-end tests with Doco
+/// Collects and runs the end-to-end tests with Doco
 ///
 /// This macro makes it very easy to use the [`doco`] testing framework. It collects all tests that
 /// are annotated with the [`doco::test`] macro, initializes the test runner, and then runs each
@@ -49,7 +49,7 @@ pub fn main(_args: TokenStream, input: TokenStream) -> TokenStream {
     expanded.into()
 }
 
-/// Annotate an end-to-end test to be run with Doco
+/// Annotates an end-to-end test to be run with Doco
 ///
 /// The `#[doco::test]` attribute is used to annotate an asynchronous test function that should be
 /// executed by Doco as an end-to-end test. The test function is passed a [`doco::Client`] that can

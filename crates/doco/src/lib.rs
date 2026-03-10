@@ -141,7 +141,7 @@ pub struct Doco {
 }
 
 impl Doco {
-    /// Connect to a long-lived browser session
+    /// Connects to a long-lived browser session
     ///
     /// Starts the Selenium browser, the application server, and any configured services in Docker
     /// containers, then returns a [`Session`] with a ready-to-use [`Client`]. The session keeps

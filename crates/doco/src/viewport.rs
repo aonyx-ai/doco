@@ -34,7 +34,7 @@ pub struct Viewport {
 }
 
 impl Viewport {
-    /// Create a new viewport with the given dimensions
+    /// Creates a new viewport with the given dimensions
     pub fn new(width: u32, height: u32) -> Self {
         Self { width, height }
     }

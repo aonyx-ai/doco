@@ -58,10 +58,9 @@ pub struct Client {
 }
 
 impl Client {
-    /// Navigate to the specified path
+    /// Navigates to the specified path on the server
     ///
-    /// This method will navigate to the specified path on the server. The path should be relative
-    /// to the base URL that was passed to Doco.
+    /// The path should be relative to the base URL that was passed to Doco.
     ///
     /// # Examples
     ///

@@ -27,9 +27,7 @@ pub struct Variable {
 }
 
 impl Variable {
-    /// Create a new environment variable
-    ///
-    /// This function creates a new environment variable with the given name and value.
+    /// Creates a new environment variable with the given name and value
     pub fn new(name: impl Into<String>, value: impl Into<String>) -> Variable {
         Variable {
             name: name.into(),

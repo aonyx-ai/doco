@@ -28,7 +28,7 @@ struct RunningService {
 }
 
 impl RunningService {
-    /// Start a service container from its configuration
+    /// Starts a service container from its configuration
     async fn start(config: &crate::Service) -> Result<Self> {
         let mut image = GenericImage::new(config.image(), config.tag());
 
@@ -80,7 +80,7 @@ struct RunningServer {
 }
 
 impl RunningServer {
-    /// Start the server container, linking it to any running services
+    /// Starts the server container, linking it to any running services
     async fn start(config: &crate::Server, services: &[RunningService]) -> Result<Self> {
         let mut server =
             GenericImage::new(config.image(), config.tag()).with_exposed_port(config.port().tcp());
@@ -118,7 +118,7 @@ impl RunningServer {
     }
 }
 
-/// Create a WebDriver instance connected to a Selenium container
+/// Creates a WebDriver instance connected to a Selenium container
 ///
 /// Configures Firefox capabilities (headless mode) and viewport dimensions based on the [`Doco`]
 /// configuration, then connects to the Selenium WebDriver endpoint.
@@ -201,7 +201,7 @@ pub struct Session {
 }
 
 impl Session {
-    /// Create a new session by starting all required containers
+    /// Creates a new session by starting all required containers
     ///
     /// Starts Selenium, the application server, and any configured services, then connects a
     /// WebDriver client. This is the implementation behind [`Doco::connect()`].
@@ -211,7 +211,7 @@ impl Session {
         Self::with_selenium(doco, selenium).await
     }
 
-    /// Create a session using an existing Selenium container
+    /// Creates a session using an existing Selenium container
     ///
     /// Used by [`TestRunner`](crate::TestRunner) to share one Selenium instance across tests
     /// while creating fresh server and service containers per test.
@@ -241,19 +241,19 @@ impl Session {
         })
     }
 
-    /// Shut down the browser session
+    /// Shuts down the browser session
     ///
-    /// This sends a quit command to the WebDriver. The containers are cleaned up automatically
-    /// when the session is dropped, but calling this method ensures the browser exits cleanly.
+    /// Sends a quit command to the WebDriver. The containers are cleaned up automatically when
+    /// the session is dropped, but calling this method ensures the browser exits cleanly.
     pub async fn close(self) -> Result<()> {
         self.driver.quit().await.ok();
         Ok(())
     }
 
-    /// Start the Selenium container
+    /// Starts the Selenium container
     ///
-    /// This is exposed for [`TestRunner`](crate::TestRunner) to share a single Selenium instance
-    /// across multiple tests. Most callers should use [`Doco::connect()`] instead.
+    /// Exposed for [`TestRunner`](crate::TestRunner) to share a single Selenium instance across
+    /// multiple tests. Most callers should use [`Doco::connect()`] instead.
     pub(crate) async fn start_selenium() -> Result<ContainerAsync<GenericImage>> {
         GenericImage::new("selenium/standalone-firefox", "latest")
             .with_exposed_port(4444.tcp())
