@@ -186,10 +186,10 @@ impl Doco {
 mod tests {
     use crate::test_utils::*;
 
-    use super::{Doco, Server, Service};
+    use super::{Doco, Server, Service, TestCase};
 
     #[test]
-    fn service_collects_services() {
+    fn doco_service_collects_services() {
         let server = Server::builder()
             .image("crccheck/hello-world")
             .tag("v1.0.0")
@@ -206,17 +206,32 @@ mod tests {
     }
 
     #[test]
-    fn trait_send() {
+    fn doco_trait_send() {
         assert_send::<Doco>();
     }
 
     #[test]
-    fn trait_sync() {
+    fn doco_trait_sync() {
         assert_sync::<Doco>();
     }
 
     #[test]
-    fn trait_unpin() {
+    fn doco_trait_unpin() {
         assert_unpin::<Doco>();
+    }
+
+    #[test]
+    fn test_case_trait_send() {
+        assert_send::<TestCase>();
+    }
+
+    #[test]
+    fn test_case_trait_sync() {
+        assert_sync::<TestCase>();
+    }
+
+    #[test]
+    fn test_case_trait_unpin() {
+        assert_unpin::<TestCase>();
     }
 }
