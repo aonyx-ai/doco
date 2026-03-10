@@ -1,3 +1,6 @@
+# Claude Code local data
+.claude/
+
 # Cache for Prettier 4
 .prettiercache
 
