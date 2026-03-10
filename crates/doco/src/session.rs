@@ -245,6 +245,11 @@ impl Session {
     ///
     /// Sends a quit command to the WebDriver. The containers are cleaned up automatically when
     /// the session is dropped, but calling this method ensures the browser exits cleanly.
+    ///
+    /// # Errors
+    ///
+    /// This method currently always succeeds. The WebDriver quit error is intentionally
+    /// suppressed since the containers will be cleaned up on drop regardless.
     pub async fn close(self) -> Result<()> {
         self.driver.quit().await.ok();
         Ok(())

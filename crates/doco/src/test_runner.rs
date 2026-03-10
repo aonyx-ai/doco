@@ -27,6 +27,10 @@ pub struct TestRunner {
 
 impl TestRunner {
     /// Builds the tokio runtime, runs the user's async init block, and initializes the runner
+    ///
+    /// # Panics
+    ///
+    /// Panics if the tokio runtime cannot be created or if the Selenium container fails to start.
     pub fn new(init: impl Future<Output = Doco>) -> Self {
         let rt = tokio::runtime::Builder::new_multi_thread()
             .enable_all()
@@ -72,6 +76,11 @@ impl TestRunner {
     ///
     /// Starts any auxiliary services like databases and waits for them to be ready, then starts
     /// the server, configures the WebDriver [`Client`], and calls the test function.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if any container fails to start, if the WebDriver connection fails, or
+    /// if the test function itself returns an error.
     pub async fn run_test(&self, test: fn(Client) -> Result<()>) -> Result<()> {
         let session = Session::with_selenium(&self.doco, Arc::clone(&self.selenium)).await?;
         let client = session.client().clone();

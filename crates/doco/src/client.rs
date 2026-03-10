@@ -62,6 +62,11 @@ impl Client {
     ///
     /// The path should be relative to the base URL that was passed to Doco.
     ///
+    /// # Errors
+    ///
+    /// Returns [`WebDriverError`] if the path cannot be joined to the base URL or if the
+    /// WebDriver navigation fails.
+    ///
     /// # Examples
     ///
     /// ```no_run

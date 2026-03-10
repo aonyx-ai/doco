@@ -152,6 +152,11 @@ impl Doco {
     /// visual regression testing where you want to visit many pages without the overhead of
     /// restarting containers each time.
     ///
+    /// # Errors
+    ///
+    /// Returns an error if any container fails to start or if the WebDriver connection cannot be
+    /// established.
+    ///
     /// # Examples
     ///
     /// ```no_run
