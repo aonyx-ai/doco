@@ -41,6 +41,7 @@ pub fn main(_args: TokenStream, input: TokenStream) -> TokenStream {
 
     let expanded = quote! {
         fn main() {
+            doco::init_tracing();
             doco::TestRunner::new(async #main_block).run();
         }
     };

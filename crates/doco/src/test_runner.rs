@@ -3,6 +3,8 @@
 use std::future::Future;
 use std::sync::Arc;
 
+use tracing::{info, info_span};
+
 use crate::{Client, Doco, Result, Session, TestCase};
 
 /// Test runner for Doco's end-to-end tests
@@ -39,7 +41,7 @@ impl TestRunner {
 
         let doco = rt.block_on(init);
 
-        println!("Initializing ephemeral test environment...");
+        info!("initializing ephemeral test environment");
 
         let selenium = rt
             .block_on(Session::start_selenium())
@@ -62,9 +64,12 @@ impl TestRunner {
             .map(|tc| {
                 let r = Arc::clone(&runner);
                 let handle = runner.rt.handle().clone();
+                let name = tc.name;
                 let func = tc.function;
                 libtest_mimic::Trial::test(tc.name, move || {
-                    handle.block_on(r.run_test(func)).map_err(|e| e.into())
+                    handle
+                        .block_on(r.run_test(name, func))
+                        .map_err(|e| e.into())
                 })
             })
             .collect();
@@ -81,7 +86,8 @@ impl TestRunner {
     ///
     /// Returns an error if any container fails to start, if the WebDriver connection fails, or
     /// if the test function itself returns an error.
-    pub async fn run_test(&self, test: fn(Client) -> Result<()>) -> Result<()> {
+    pub async fn run_test(&self, name: &str, test: fn(Client) -> Result<()>) -> Result<()> {
+        let _span = info_span!("test", name).entered();
         let session = Session::with_selenium(&self.doco, Arc::clone(&self.selenium)).await?;
         let client = session.client().clone();
 

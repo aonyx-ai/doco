@@ -1,9 +1,11 @@
 //! WebDriver client that interacts with the web application
 
-use reqwest::Url;
 use std::ops::Deref;
+
+use reqwest::Url;
 use thirtyfour::error::{WebDriverError, WebDriverErrorInner};
 use thirtyfour::WebDriver;
+use tracing::debug;
 use typed_builder::TypedBuilder;
 
 /// WebDriver client that interacts with the web application
@@ -85,6 +87,7 @@ impl Client {
             .base_url
             .join(path)
             .map_err(|e| WebDriverError::from(WebDriverErrorInner::InvalidUrl(e)))?;
+        debug!(%url, "navigating");
         self.client.goto(url.as_str()).await
     }
 }

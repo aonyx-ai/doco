@@ -58,6 +58,7 @@ pub use crate::server::Server;
 pub use crate::service::Service;
 pub use crate::session::Session;
 pub use crate::test_runner::TestRunner;
+pub use crate::tracing_init::init_tracing;
 pub use crate::viewport::Viewport;
 
 mod client;
@@ -66,6 +67,7 @@ mod server;
 mod service;
 mod session;
 mod test_runner;
+mod tracing_init;
 mod viewport;
 
 #[cfg(test)]
