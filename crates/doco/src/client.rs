@@ -16,7 +16,7 @@ use typed_builder::TypedBuilder;
 /// examples on what methods are available on the `Client` and how to interact with the web
 /// application, see the [thirtyfour] documentation.
 ///
-/// # Example
+/// # Examples
 ///
 /// ```rust
 /// use doco::{Client, Result};
@@ -63,7 +63,7 @@ impl Client {
     /// This method will navigate to the specified path on the server. The path should be relative
     /// to the base URL that was passed to Doco.
     ///
-    /// # Example
+    /// # Examples
     ///
     /// ```no_run
     /// use doco::{Client, Result};

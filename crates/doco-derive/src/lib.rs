@@ -18,7 +18,7 @@ use syn::{parse_macro_input, ItemFn};
 /// are annotated with the [`doco::test`] macro, initializes the test runner, and then runs each
 /// test in an isolated, ephemeral environment.
 ///
-/// # Example
+/// # Examples
 ///
 /// ```ignore
 /// use doco::{Doco, Server};
@@ -55,7 +55,7 @@ pub fn main(_args: TokenStream, input: TokenStream) -> TokenStream {
 /// executed by Doco as an end-to-end test. The test function is passed a [`doco::Client`] that can
 /// be used to interact with the web application, and it should return a [`doco::Result`].
 ///
-/// # Example
+/// # Examples
 ///
 /// ```ignore
 /// use doco::{Client, Result};

@@ -5,7 +5,7 @@
 /// Controls the browser window size for tests. This is particularly important for visual
 /// regression testing where screenshots must be captured at a consistent size.
 ///
-/// # Example
+/// # Examples
 ///
 /// ```rust
 /// use doco::{Doco, Server, Viewport};

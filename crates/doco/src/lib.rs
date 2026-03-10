@@ -13,7 +13,7 @@
 //! tests are passed a `Client` that can be used to interact with a website, making it easy to
 //! simulate user interactions and write assertions against the web application.
 //!
-//! # Example
+//! # Examples
 //!
 //! ```rust
 //! use doco::{Client, Doco, Result, Server, Service, WaitFor};
@@ -92,7 +92,7 @@ inventory::collect!(TestCase);
 /// application server and any additional services that it depends on. An instance of this struct
 /// must be returned by the `main` function of the test suite.
 ///
-/// # Example
+/// # Examples
 ///
 /// ```rust
 /// use doco::{Doco, Server};
@@ -152,7 +152,7 @@ impl Doco {
     /// visual regression testing where you want to visit many pages without the overhead of
     /// restarting containers each time.
     ///
-    /// # Example
+    /// # Examples
     ///
     /// ```no_run
     /// use doco::{Doco, Server};

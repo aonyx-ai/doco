@@ -161,7 +161,7 @@ async fn create_driver(
 ///
 /// Use [`Doco::connect()`](crate::Doco::connect) to create a session.
 ///
-/// # Example
+/// # Examples
 ///
 /// ```no_run
 /// use doco::{Doco, Server};
