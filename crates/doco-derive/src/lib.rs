@@ -36,7 +36,6 @@ use syn::{parse_macro_input, ItemFn};
 /// ```
 #[proc_macro_attribute]
 pub fn main(_args: TokenStream, input: TokenStream) -> TokenStream {
-    // Parse the function that has been annotated with the `#[doco_derive::main]` attribute
     let main_fn = parse_macro_input!(input as ItemFn);
     let main_block = main_fn.block;
 
@@ -73,16 +72,13 @@ pub fn main(_args: TokenStream, input: TokenStream) -> TokenStream {
 /// ```
 #[proc_macro_attribute]
 pub fn test(_attr: TokenStream, input: TokenStream) -> TokenStream {
-    // Parse the function that has been annotated with the `#[doco_derive::test]` attribute
     let input_fn = parse_macro_input!(input as ItemFn);
     let input_fn_ident = &input_fn.sig.ident;
     let input_fn_name = input_fn_ident.to_string();
 
-    // Extract the function name, arguments, and body for the final test function
     let test_fn_ident = format_ident!("{}_test", &input_fn_ident);
     let test_args = &input_fn.sig.inputs;
 
-    // Generate a test function that executes the test block inside doco's asynchronous runtime
     let test_function = quote! {
         #input_fn
 
