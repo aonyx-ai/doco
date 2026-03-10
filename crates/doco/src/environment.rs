@@ -43,7 +43,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn from_str() {
+    fn new_with_str_args_stores_values() {
         let variable = Variable::new("name", "value");
 
         assert_eq!(variable.name(), "name");
@@ -51,7 +51,7 @@ mod tests {
     }
 
     #[test]
-    fn from_string() {
+    fn new_with_string_args_stores_values() {
         let name = String::from("name");
         let value = String::from("value");
 

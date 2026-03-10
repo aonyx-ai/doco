@@ -104,37 +104,23 @@ mod tests {
 
     use super::*;
 
-    #[tokio::test]
-    async fn selenium_can_access_host() -> Result<()> {
-        let listener = TcpListener::bind("0.0.0.0:0").await?;
-        let port = listener.local_addr()?.port();
+    #[test]
+    fn filter_selects_matching_tests() {
+        let trials = vec![
+            libtest_mimic::Trial::test("alpha_test", || Ok(())),
+            libtest_mimic::Trial::test("beta_test", || Err("should not run".into())),
+        ];
 
-        let app = Router::new().route("/", get(|| async { "hello from the test" }));
-        tokio::spawn(async { axum::serve(listener, app).await });
+        let args = libtest_mimic::Arguments {
+            filter: Some("alpha".into()),
+            ..Default::default()
+        };
 
-        let selenium = Session::start_selenium().await?;
+        let conclusion = libtest_mimic::run(&args, trials);
 
-        let driver = thirtyfour::WebDriver::new(
-            &format!(
-                "http://{}:{}",
-                selenium.get_host().await?,
-                selenium.get_host_port_ipv4(4444).await?
-            ),
-            thirtyfour::DesiredCapabilities::firefox(),
-        )
-        .await
-        .expect("failed to connect to WebDriver");
-
-        driver
-            .goto(&format!("http://host.docker.internal:{port}/"))
-            .await?;
-        let body = driver.source().await?;
-
-        assert!(body.contains("hello from the test"));
-
-        driver.quit().await.ok();
-
-        Ok(())
+        assert_eq!(conclusion.num_passed, 1);
+        assert_eq!(conclusion.num_failed, 0);
+        assert_eq!(conclusion.num_filtered_out, 1);
     }
 
     #[tokio::test]
@@ -171,6 +157,73 @@ mod tests {
         driver.quit().await.ok();
 
         Ok(())
+    }
+
+    #[test]
+    fn list_flag_prints_test_names() {
+        let trials = vec![
+            libtest_mimic::Trial::test("alpha_test", || Ok(())),
+            libtest_mimic::Trial::test("beta_test", || Ok(())),
+        ];
+
+        let args = libtest_mimic::Arguments {
+            list: true,
+            ..Default::default()
+        };
+
+        let conclusion = libtest_mimic::run(&args, trials);
+
+        // --list exits without running anything, so no tests pass or fail
+        assert_eq!(conclusion.num_passed, 0);
+        assert_eq!(conclusion.num_failed, 0);
+    }
+
+    #[tokio::test]
+    async fn selenium_can_access_host() -> Result<()> {
+        let listener = TcpListener::bind("0.0.0.0:0").await?;
+        let port = listener.local_addr()?.port();
+
+        let app = Router::new().route("/", get(|| async { "hello from the test" }));
+        tokio::spawn(async { axum::serve(listener, app).await });
+
+        let selenium = Session::start_selenium().await?;
+
+        let driver = thirtyfour::WebDriver::new(
+            &format!(
+                "http://{}:{}",
+                selenium.get_host().await?,
+                selenium.get_host_port_ipv4(4444).await?
+            ),
+            thirtyfour::DesiredCapabilities::firefox(),
+        )
+        .await
+        .expect("failed to connect to WebDriver");
+
+        driver
+            .goto(&format!("http://host.docker.internal:{port}/"))
+            .await?;
+        let body = driver.source().await?;
+
+        assert!(body.contains("hello from the test"));
+
+        driver.quit().await.ok();
+
+        Ok(())
+    }
+
+    #[test]
+    fn trait_send() {
+        assert_send::<TestRunner>();
+    }
+
+    #[test]
+    fn trait_sync() {
+        assert_sync::<TestRunner>();
+    }
+
+    #[test]
+    fn trait_unpin() {
+        assert_unpin::<TestRunner>();
     }
 
     #[tokio::test]
@@ -220,58 +273,5 @@ mod tests {
         driver.quit().await.ok();
 
         Ok(())
-    }
-
-    #[test]
-    fn list_flag_prints_test_names() {
-        let trials = vec![
-            libtest_mimic::Trial::test("alpha_test", || Ok(())),
-            libtest_mimic::Trial::test("beta_test", || Ok(())),
-        ];
-
-        let args = libtest_mimic::Arguments {
-            list: true,
-            ..Default::default()
-        };
-
-        let conclusion = libtest_mimic::run(&args, trials);
-
-        // --list exits without running anything, so no tests pass or fail
-        assert_eq!(conclusion.num_passed, 0);
-        assert_eq!(conclusion.num_failed, 0);
-    }
-
-    #[test]
-    fn filter_selects_matching_tests() {
-        let trials = vec![
-            libtest_mimic::Trial::test("alpha_test", || Ok(())),
-            libtest_mimic::Trial::test("beta_test", || Err("should not run".into())),
-        ];
-
-        let args = libtest_mimic::Arguments {
-            filter: Some("alpha".into()),
-            ..Default::default()
-        };
-
-        let conclusion = libtest_mimic::run(&args, trials);
-
-        assert_eq!(conclusion.num_passed, 1);
-        assert_eq!(conclusion.num_failed, 0);
-        assert_eq!(conclusion.num_filtered_out, 1);
-    }
-
-    #[test]
-    fn trait_send() {
-        assert_send::<TestRunner>();
-    }
-
-    #[test]
-    fn trait_sync() {
-        assert_sync::<TestRunner>();
-    }
-
-    #[test]
-    fn trait_unpin() {
-        assert_unpin::<TestRunner>();
     }
 }
