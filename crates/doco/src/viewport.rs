@@ -24,7 +24,7 @@
 ///     .build()
 /// # }
 /// ```
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Copy, Clone, Eq, PartialEq, Debug)]
 pub struct Viewport {
     /// The width of the browser window in pixels
     width: u32,
