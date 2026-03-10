@@ -5,7 +5,7 @@
 /// Controls the browser window size for tests. This is particularly important for visual
 /// regression testing where screenshots must be captured at a consistent size.
 ///
-/// # Example
+/// # Examples
 ///
 /// ```rust
 /// use doco::{Doco, Server, Viewport};
@@ -24,7 +24,7 @@
 ///     .build()
 /// # }
 /// ```
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Copy, Clone, Eq, PartialEq, Debug)]
 pub struct Viewport {
     /// The width of the browser window in pixels
     width: u32,
@@ -34,7 +34,7 @@ pub struct Viewport {
 }
 
 impl Viewport {
-    /// Create a new viewport with the given dimensions
+    /// Creates a new viewport with the given dimensions
     pub fn new(width: u32, height: u32) -> Self {
         Self { width, height }
     }

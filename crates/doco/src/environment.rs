@@ -27,9 +27,7 @@ pub struct Variable {
 }
 
 impl Variable {
-    /// Create a new environment variable
-    ///
-    /// This function creates a new environment variable with the given name and value.
+    /// Creates a new environment variable with the given name and value
     pub fn new(name: impl Into<String>, value: impl Into<String>) -> Variable {
         Variable {
             name: name.into(),
@@ -45,7 +43,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn from_str() {
+    fn new_with_str_args_stores_values() {
         let variable = Variable::new("name", "value");
 
         assert_eq!(variable.name(), "name");
@@ -53,7 +51,7 @@ mod tests {
     }
 
     #[test]
-    fn from_string() {
+    fn new_with_string_args_stores_values() {
         let name = String::from("name");
         let value = String::from("value");
 

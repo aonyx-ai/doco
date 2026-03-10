@@ -16,7 +16,7 @@ use typed_builder::TypedBuilder;
 /// examples on what methods are available on the `Client` and how to interact with the web
 /// application, see the [thirtyfour] documentation.
 ///
-/// # Example
+/// # Examples
 ///
 /// ```rust
 /// use doco::{Client, Result};
@@ -58,12 +58,16 @@ pub struct Client {
 }
 
 impl Client {
-    /// Navigate to the specified path
+    /// Navigates to the specified path on the server
     ///
-    /// This method will navigate to the specified path on the server. The path should be relative
-    /// to the base URL that was passed to Doco.
+    /// The path should be relative to the base URL that was passed to Doco.
     ///
-    /// # Example
+    /// # Errors
+    ///
+    /// Returns [`WebDriverError`] if the path cannot be joined to the base URL or if the
+    /// WebDriver navigation fails.
+    ///
+    /// # Examples
     ///
     /// ```no_run
     /// use doco::{Client, Result};

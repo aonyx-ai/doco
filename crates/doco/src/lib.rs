@@ -13,7 +13,7 @@
 //! tests are passed a `Client` that can be used to interact with a website, making it easy to
 //! simulate user interactions and write assertions against the web application.
 //!
-//! # Example
+//! # Examples
 //!
 //! ```rust
 //! use doco::{Client, Doco, Result, Server, Service, WaitFor};
@@ -92,7 +92,7 @@ inventory::collect!(TestCase);
 /// application server and any additional services that it depends on. An instance of this struct
 /// must be returned by the `main` function of the test suite.
 ///
-/// # Example
+/// # Examples
 ///
 /// ```rust
 /// use doco::{Doco, Server};
@@ -141,7 +141,7 @@ pub struct Doco {
 }
 
 impl Doco {
-    /// Connect to a long-lived browser session
+    /// Connects to a long-lived browser session
     ///
     /// Starts the Selenium browser, the application server, and any configured services in Docker
     /// containers, then returns a [`Session`] with a ready-to-use [`Client`]. The session keeps
@@ -152,7 +152,12 @@ impl Doco {
     /// visual regression testing where you want to visit many pages without the overhead of
     /// restarting containers each time.
     ///
-    /// # Example
+    /// # Errors
+    ///
+    /// Returns an error if any container fails to start or if the WebDriver connection cannot be
+    /// established.
+    ///
+    /// # Examples
     ///
     /// ```no_run
     /// use doco::{Doco, Server};
@@ -181,10 +186,10 @@ impl Doco {
 mod tests {
     use crate::test_utils::*;
 
-    use super::{Doco, Server, Service};
+    use super::{Doco, Server, Service, TestCase};
 
     #[test]
-    fn service_collects_services() {
+    fn doco_service_collects_services() {
         let server = Server::builder()
             .image("crccheck/hello-world")
             .tag("v1.0.0")
@@ -201,17 +206,32 @@ mod tests {
     }
 
     #[test]
-    fn trait_send() {
+    fn doco_trait_send() {
         assert_send::<Doco>();
     }
 
     #[test]
-    fn trait_sync() {
+    fn doco_trait_sync() {
         assert_sync::<Doco>();
     }
 
     #[test]
-    fn trait_unpin() {
+    fn doco_trait_unpin() {
         assert_unpin::<Doco>();
+    }
+
+    #[test]
+    fn test_case_trait_send() {
+        assert_send::<TestCase>();
+    }
+
+    #[test]
+    fn test_case_trait_sync() {
+        assert_sync::<TestCase>();
+    }
+
+    #[test]
+    fn test_case_trait_unpin() {
+        assert_unpin::<TestCase>();
     }
 }

@@ -16,7 +16,7 @@ use crate::environment::Variable;
 /// `postgres` service will allow the server to connect to `postgres:5432`. See the `axum-postgres`
 /// example in the repository for a working demo.
 ///
-/// # Example
+/// # Examples
 ///
 /// ```rust
 /// use doco::Service;
