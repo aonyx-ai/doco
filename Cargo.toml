@@ -12,6 +12,6 @@ edition = "2021"
 license = "MIT OR Apache-2.0"
 
 description = "A framework and runner for end-to-end tests for web applications"
-homepage = "https://github.com/otterbuild/doco"
-repository = "https://github.com/otterbuild/doco.git"
+homepage = "https://github.com/aonyx-ai/doco"
+repository = "https://github.com/aonyx-ai/doco.git"
 readme = "README.md"
