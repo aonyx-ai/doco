@@ -738,7 +738,7 @@ dependencies = [
 
 [[package]]
 name = "doco"
-version = "0.1.0"
+version = "0.2.3"
 dependencies = [
  "anyhow",
  "doco-derive",
@@ -749,12 +749,14 @@ dependencies = [
  "testcontainers",
  "thirtyfour",
  "tokio",
+ "tracing",
+ "tracing-subscriber",
  "typed-builder",
 ]
 
 [[package]]
 name = "doco-derive"
-version = "0.1.0"
+version = "0.2.3"
 dependencies = [
  "quote",
  "syn",
@@ -1655,7 +1657,7 @@ dependencies = [
  "num-integer",
  "num-iter",
  "num-traits",
- "rand 0.8.5",
+ "rand 0.8.6",
  "smallvec",
  "zeroize",
 ]
@@ -2024,9 +2026,9 @@ checksum = "69cdb34c158ceb288df11e18b4bd39de994f6657d83847bdffdbd7f346754b0f"
 
 [[package]]
 name = "rand"
-version = "0.8.5"
+version = "0.8.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "34af8d1a0e25924bc5b7c43c079c942339d8f0a8b57c39049bef581b46327404"
+checksum = "5ca0ecfa931c29007047d1bc58e623ab12e5590e8c7cc53200d5202b69266d8a"
 dependencies = [
  "libc",
  "rand_chacha 0.3.1",
@@ -2747,7 +2749,7 @@ dependencies = [
  "memchr",
  "once_cell",
  "percent-encoding",
- "rand 0.8.5",
+ "rand 0.8.6",
  "rsa",
  "serde",
  "sha1",
@@ -2786,7 +2788,7 @@ dependencies = [
  "md-5",
  "memchr",
  "once_cell",
- "rand 0.8.5",
+ "rand 0.8.6",
  "serde",
  "serde_json",
  "sha2",
@@ -2963,9 +2965,9 @@ dependencies = [
 
 [[package]]
 name = "thirtyfour"
-version = "0.35.0"
+version = "0.36.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "44d1dd5271076f9cf5cb6a673497d1476cda2633e6cf2523edd00ac16218d651"
+checksum = "48f1edfb88bbdf0365c6dc161e8694ce8414c0b79d0d3a3663b4baac62236be0"
 dependencies = [
  "arc-swap",
  "async-trait",
@@ -2983,7 +2985,7 @@ dependencies = [
  "serde_repr",
  "stringmatch",
  "thirtyfour-macros",
- "thiserror 1.0.64",
+ "thiserror 2.0.18",
  "tokio",
  "tracing",
  "url",
