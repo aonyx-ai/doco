@@ -25,7 +25,7 @@ jobs:
         with:
           persist-credentials: false
       - name: Install Just
-        uses: taiki-e/install-action@e0eafa9a0d485c37f97c0f7beb930a58a2facbac # v2
+        uses: taiki-e/install-action@6c1f7cf125e42770ff087ea443901b487cc5471a # v2
         with:
           tool: just
       - name: Export targets
