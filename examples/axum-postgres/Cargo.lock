@@ -738,7 +738,7 @@ dependencies = [
 
 [[package]]
 name = "doco"
-version = "0.1.0"
+version = "0.2.3"
 dependencies = [
  "anyhow",
  "doco-derive",
@@ -749,12 +749,14 @@ dependencies = [
  "testcontainers",
  "thirtyfour",
  "tokio",
+ "tracing",
+ "tracing-subscriber",
  "typed-builder",
 ]
 
 [[package]]
 name = "doco-derive"
-version = "0.1.0"
+version = "0.2.3"
 dependencies = [
  "quote",
  "syn",
@@ -1974,9 +1976,9 @@ dependencies = [
 
 [[package]]
 name = "quinn-proto"
-version = "0.11.13"
+version = "0.11.14"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f1906b49b0c3bc04b5fe5d86a77925ae6524a19b816ae38ce1e426255f1d8a31"
+checksum = "434b42fec591c96ef50e21e886936e66d3cc3f737104fdb9b737c40ffb94c098"
 dependencies = [
  "aws-lc-rs",
  "bytes",
@@ -2963,9 +2965,9 @@ dependencies = [
 
 [[package]]
 name = "thirtyfour"
-version = "0.35.0"
+version = "0.36.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "44d1dd5271076f9cf5cb6a673497d1476cda2633e6cf2523edd00ac16218d651"
+checksum = "48f1edfb88bbdf0365c6dc161e8694ce8414c0b79d0d3a3663b4baac62236be0"
 dependencies = [
  "arc-swap",
  "async-trait",
@@ -2983,7 +2985,7 @@ dependencies = [
  "serde_repr",
  "stringmatch",
  "thirtyfour-macros",
- "thiserror 1.0.64",
+ "thiserror 2.0.18",
  "tokio",
  "tracing",
  "url",
