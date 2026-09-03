@@ -738,7 +738,7 @@ dependencies = [
 
 [[package]]
 name = "doco"
-version = "0.1.0"
+version = "0.2.3"
 dependencies = [
  "anyhow",
  "doco-derive",
@@ -749,12 +749,14 @@ dependencies = [
  "testcontainers",
  "thirtyfour",
  "tokio",
+ "tracing",
+ "tracing-subscriber",
  "typed-builder",
 ]
 
 [[package]]
 name = "doco-derive"
-version = "0.1.0"
+version = "0.2.3"
 dependencies = [
  "quote",
  "syn",
@@ -2325,9 +2327,9 @@ checksum = "f87165f0995f63a9fbeea62b64d10b4d9d8e78ec6d7d51fb2125fda7bb36788f"
 
 [[package]]
 name = "rustls-webpki"
-version = "0.103.9"
+version = "0.103.13"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d7df23109aa6c1567d1c575b9952556388da57401e4ace1d15f79eedad0d8f53"
+checksum = "61c429a8649f110dddef65e2a5ad240f747e85f7758a6bccc7e5777bd33f756e"
 dependencies = [
  "aws-lc-rs",
  "ring",
@@ -2963,9 +2965,9 @@ dependencies = [
 
 [[package]]
 name = "thirtyfour"
-version = "0.35.0"
+version = "0.36.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "44d1dd5271076f9cf5cb6a673497d1476cda2633e6cf2523edd00ac16218d651"
+checksum = "48f1edfb88bbdf0365c6dc161e8694ce8414c0b79d0d3a3663b4baac62236be0"
 dependencies = [
  "arc-swap",
  "async-trait",
@@ -2983,7 +2985,7 @@ dependencies = [
  "serde_repr",
  "stringmatch",
  "thirtyfour-macros",
- "thiserror 1.0.64",
+ "thiserror 2.0.18",
  "tokio",
  "tracing",
  "url",
