@@ -636,6 +636,7 @@ dependencies = [
  "inventory",
  "libtest-mimic",
  "reqwest",
+ "serde_json",
  "testcontainers",
  "thirtyfour",
  "tokio",
