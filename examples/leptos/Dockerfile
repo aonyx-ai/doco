@@ -4,16 +4,12 @@ FROM rust:1.85.0-slim AS builder
 # Install system-level dependencies
 RUN apt-get update && apt-get install -y \
     libssl-dev \
-    npm \
     pkg-config \
     wget \
     # Clean up
     && apt-get autoremove -y \
     && apt-get clean -y \
     && rm -rf /var/lib/apt/lists/*
-
-# Install dart-sass
-RUN npm install -g sass
 
 # Add the WASM target
 RUN rustup target add wasm32-unknown-unknown
