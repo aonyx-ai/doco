@@ -140,6 +140,42 @@ pub struct Doco {
     #[builder(default, setter(strip_option))]
     #[getset(get = "pub")]
     viewport: Option<Viewport>,
+
+    /// Firefox preferences to set on the browser
+    ///
+    /// Doco serves the application over plain HTTP at a host that browsers do not consider
+    /// trustworthy. An application whose session cookie is `Secure`, or carries the `__Host-`
+    /// prefix that implies it, cannot be signed into: the browser refuses the cookie, and every
+    /// request arrives anonymous. Setting `dom.securecontext.allowlist` to the server's host
+    /// makes Firefox treat the origin as trustworthy, as it already does for `localhost`.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use doco::{Doco, Server};
+    ///
+    /// let server = Server::builder().image("app").tag("latest").port(8000).build();
+    ///
+    /// let doco = Doco::builder()
+    ///     .server(server)
+    ///     .pref("dom.securecontext.allowlist", "host.docker.internal")
+    ///     .pref("security.warn_submit_secure_to_insecure", false)
+    ///     .build();
+    ///
+    /// assert_eq!(doco.prefs().len(), 2);
+    /// ```
+    #[builder(via_mutators(init = Vec::new()), mutators(
+        /// Sets a Firefox preference for the browser
+        ///
+        /// Preferences are typed. Pass the type Firefox expects: `bool` for a boolean, `i64`
+        /// for an integer, and a string for a string. A boolean passed as `"false"` is a
+        /// non-empty string, which Firefox reads as `true`.
+        pub fn pref(mut self, name: impl Into<String>, value: impl Into<serde_json::Value>) {
+            self.prefs.push((name.into(), value.into()));
+        }
+    ))]
+    #[getset(get = "pub")]
+    prefs: Vec<(String, serde_json::Value)>,
 }
 
 impl Doco {

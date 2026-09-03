@@ -154,6 +154,16 @@ async fn create_driver(
         caps.set_headless()
             .context("failed to set headless capability")?;
     }
+    if !doco.prefs().is_empty() {
+        let mut prefs = thirtyfour::common::capabilities::firefox::FirefoxPreferences::new();
+        for (name, value) in doco.prefs() {
+            prefs
+                .set(name, value)
+                .with_context(|| format!("failed to set Firefox preference {name}"))?;
+        }
+        caps.set_preferences(prefs)
+            .context("failed to apply Firefox preferences")?;
+    }
 
     let endpoint = format!(
         "http://{}:{}",
