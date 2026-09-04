@@ -17,7 +17,7 @@ concurrency:
 jobs:
   detect-changes:
     name: Detect changes
-    runs-on: warp-ubuntu-latest-x64-2x
+    runs-on: ubuntu-latest
     permissions:
       contents: read
     outputs:
@@ -38,7 +38,7 @@ jobs:
 
   format:
     name: Check Rust style
-    runs-on: warp-ubuntu-latest-x64-2x
+    runs-on: ubuntu-latest
     permissions:
       contents: read
     needs: detect-changes
@@ -56,7 +56,7 @@ jobs:
 
   lint:
     name: Lint Rust code
-    runs-on: warp-ubuntu-latest-x64-2x
+    runs-on: ubuntu-latest
     permissions:
       contents: read
     needs: detect-changes
@@ -74,7 +74,7 @@ jobs:
 
   test:
     name: Run integration tests
-    runs-on: warp-ubuntu-latest-x64-2x
+    runs-on: ubuntu-latest
     permissions:
       contents: read
     needs: detect-changes
