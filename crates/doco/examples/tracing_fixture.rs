@@ -1,10 +1,16 @@
-use doco::{Client, Doco, Result, Server};
+use doco::{Client, Context, Doco, Result, Server};
 
 #[doco::test]
 async fn visit_root(client: Client) -> Result<()> {
-    client.goto("/").await?;
+    client
+        .goto("/")
+        .await
+        .context("failed to visit the root path")?;
 
-    let body = client.source().await?;
+    let body = client
+        .source()
+        .await
+        .context("failed to read the page source")?;
 
     assert!(body.contains("Hello World"));
 

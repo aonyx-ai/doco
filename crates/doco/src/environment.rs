@@ -26,53 +26,48 @@ pub struct Variable {
     value: String,
 }
 
-impl Variable {
-    /// Creates a new environment variable with the given name and value
-    pub fn new(name: impl Into<String>, value: impl Into<String>) -> Variable {
-        Variable {
-            name: name.into(),
-            value: value.into(),
-        }
-    }
-}
-
 #[cfg(test)]
 mod tests {
-    use crate::test_utils::*;
-
     use super::*;
 
+    fn assert_auto_traits<T: Send + Sync + Unpin>() {}
+
     #[test]
-    fn new_with_str_args_stores_values() {
-        let variable = Variable::new("name", "value");
+    fn builder_with_str_args_stores_name() {
+        let variable = Variable::builder().name("name").value("value").build();
 
         assert_eq!(variable.name(), "name");
+    }
+
+    #[test]
+    fn builder_with_str_args_stores_value() {
+        let variable = Variable::builder().name("name").value("value").build();
+
         assert_eq!(variable.value(), "value");
     }
 
     #[test]
-    fn new_with_string_args_stores_values() {
+    fn builder_with_string_args_stores_name() {
         let name = String::from("name");
         let value = String::from("value");
 
-        let variable = Variable::new(name, value);
+        let variable = Variable::builder().name(name).value(value).build();
 
         assert_eq!(variable.name(), "name");
+    }
+
+    #[test]
+    fn builder_with_string_args_stores_value() {
+        let name = String::from("name");
+        let value = String::from("value");
+
+        let variable = Variable::builder().name(name).value(value).build();
+
         assert_eq!(variable.value(), "value");
     }
 
     #[test]
-    fn trait_send() {
-        assert_send::<Variable>();
-    }
-
-    #[test]
-    fn trait_sync() {
-        assert_sync::<Variable>();
-    }
-
-    #[test]
-    fn trait_unpin() {
-        assert_unpin::<Variable>();
+    fn variable_is_send_sync_and_unpin() {
+        assert_auto_traits::<Variable>();
     }
 }

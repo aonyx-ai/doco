@@ -10,7 +10,7 @@
 //! Doco has a very simple, yet powerful API to make it easy to write tests. In a `main` function,
 //! the environment for tests is defined and configured. Most importantly, Doco is told about the
 //! server and its dependencies. Then, tests are written just like with any other Rust test. The
-//! tests are passed a `Client` that can be used to interact with a website, making it easy to
+//! tests are passed a `Client` that can be used to interact with a website. This makes it easy to
 //! simulate user interactions and write assertions against the web application.
 //!
 //! # Examples
@@ -46,7 +46,7 @@
 
 pub use anyhow::{anyhow, Context, Error, Result};
 pub use doco_derive::{main, test};
-use getset::Getters;
+use getset::{CopyGetters, Getters};
 #[doc(hidden)]
 pub use inventory;
 pub use testcontainers::core::{AccessMode, Mount, WaitFor};
@@ -54,6 +54,8 @@ pub use thirtyfour::By;
 use typed_builder::TypedBuilder;
 
 pub use crate::client::Client;
+pub use crate::error::{ConnectError, RunTestError};
+pub use crate::headless::Headless;
 pub use crate::server::Server;
 pub use crate::service::Service;
 pub use crate::session::Session;
@@ -63,6 +65,8 @@ pub use crate::viewport::Viewport;
 
 mod client;
 mod environment;
+mod error;
+mod headless;
 mod server;
 mod service;
 mod session;
@@ -70,29 +74,47 @@ mod test_runner;
 mod tracing_init;
 mod viewport;
 
-#[cfg(test)]
-mod test_utils;
-
 /// A test case registered by the `#[doco::test]` macro
 ///
 /// Each test case consists of a name and a function that receives a [`Client`] and returns a
 /// [`Result`]. Test cases are collected at link time using the [`inventory`] crate and run by the
 /// [`TestRunner`].
+///
+/// # Examples
+///
+/// ```rust
+/// use doco::{Client, Result, TestCase};
+///
+/// fn visit_root_path(_client: Client) -> Result<()> {
+///     Ok(())
+/// }
+///
+/// let test_case = TestCase::builder()
+///     .name("visit_root_path")
+///     .function(visit_root_path)
+///     .build();
+///
+/// assert_eq!(test_case.name(), "visit_root_path");
+/// ```
+#[derive(Copy, Clone, bon::Builder, CopyGetters)]
+#[builder(const)]
 pub struct TestCase {
     /// The name of the test
-    pub name: &'static str,
+    #[getset(get_copy = "pub")]
+    name: &'static str,
 
     /// The test function to execute
-    pub function: fn(Client) -> Result<()>,
+    #[getset(get_copy = "pub")]
+    function: fn(Client) -> Result<()>,
 }
 
 inventory::collect!(TestCase);
 
 /// Configuration for end-to-end tests with Doco
 ///
-/// The `Doco` struct configures the environment that is used to run each test, most importantly the
-/// application server and any additional services that it depends on. An instance of this struct
-/// must be returned by the `main` function of the test suite.
+/// The `Doco` struct configures the environment for each test, most importantly the application
+/// server and any additional services that it depends on. The `main` function of the test suite
+/// must return an instance of this struct.
 ///
 /// # Examples
 ///
@@ -110,7 +132,7 @@ inventory::collect!(TestCase);
 ///     Doco::builder().server(server).build()
 /// }
 /// ```
-#[derive(Clone, Debug, Getters, TypedBuilder)]
+#[derive(Clone, Debug, CopyGetters, Getters, TypedBuilder)]
 pub struct Doco {
     /// The server that Doco will test
     #[getset(get = "pub")]
@@ -127,11 +149,11 @@ pub struct Doco {
 
     /// Whether to run the browser in headless mode
     ///
-    /// When `true`, Firefox runs without a visible window. Defaults to auto-detection: headless
-    /// when the `CI` environment variable is set, headed otherwise.
-    #[builder(default = std::env::var("CI").is_ok())]
-    #[getset(get = "pub")]
-    headless: bool,
+    /// When [`Headless::Enabled`], Firefox runs without a visible window. Defaults to
+    /// auto-detection: headless when the `CI` environment variable is set, headed otherwise.
+    #[builder(default)]
+    #[getset(get_copy = "pub")]
+    headless: Headless,
 
     /// The browser viewport dimensions
     ///
@@ -145,7 +167,7 @@ pub struct Doco {
     ///
     /// Doco serves the application over plain HTTP at a host that browsers do not consider
     /// trustworthy. An application whose session cookie is `Secure`, or carries the `__Host-`
-    /// prefix that implies it, cannot be signed into: the browser refuses the cookie, and every
+    /// prefix that implies it, cannot be signed into, because the browser refuses the cookie. Every
     /// request arrives anonymous. Setting `dom.securecontext.allowlist` to the server's host
     /// makes Firefox treat the origin as trustworthy, as it already does for `localhost`.
     ///
@@ -211,20 +233,25 @@ impl Doco {
     /// let body = session.source().await?;
     /// assert!(body.contains("Hello"));
     ///
-    /// session.close().await?;
+    /// session.close().await;
     /// # Ok(())
     /// # }
     /// ```
-    pub async fn connect(&self) -> Result<Session> {
+    pub async fn connect(&self) -> Result<Session, ConnectError> {
         Session::connect(self).await
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::test_utils::*;
-
     use super::{Doco, Server, Service, TestCase};
+
+    fn assert_auto_traits<T: Send + Sync + Unpin>() {}
+
+    #[test]
+    fn doco_is_send_sync_and_unpin() {
+        assert_auto_traits::<Doco>();
+    }
 
     #[test]
     fn doco_service_collects_services() {
@@ -244,32 +271,7 @@ mod tests {
     }
 
     #[test]
-    fn doco_trait_send() {
-        assert_send::<Doco>();
-    }
-
-    #[test]
-    fn doco_trait_sync() {
-        assert_sync::<Doco>();
-    }
-
-    #[test]
-    fn doco_trait_unpin() {
-        assert_unpin::<Doco>();
-    }
-
-    #[test]
-    fn test_case_trait_send() {
-        assert_send::<TestCase>();
-    }
-
-    #[test]
-    fn test_case_trait_sync() {
-        assert_sync::<TestCase>();
-    }
-
-    #[test]
-    fn test_case_trait_unpin() {
-        assert_unpin::<TestCase>();
+    fn test_case_is_send_sync_and_unpin() {
+        assert_auto_traits::<TestCase>();
     }
 }

@@ -20,11 +20,11 @@
 ///
 /// Doco::builder()
 ///     .server(server)
-///     .viewport(Viewport::new(1280, 720))
+///     .viewport(Viewport::builder().width(1280).height(720).build())
 ///     .build()
 /// # }
 /// ```
-#[derive(Copy, Clone, Eq, PartialEq, Debug)]
+#[derive(Copy, Clone, Eq, PartialEq, Debug, bon::Builder)]
 pub struct Viewport {
     /// The width of the browser window in pixels
     width: u32,
@@ -34,17 +34,32 @@ pub struct Viewport {
 }
 
 impl Viewport {
-    /// Creates a new viewport with the given dimensions
-    pub fn new(width: u32, height: u32) -> Self {
-        Self { width, height }
-    }
-
-    /// The width of the browser window in pixels
+    /// Returns the width of the browser window in pixels
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use doco::Viewport;
+    ///
+    /// let viewport = Viewport::builder().width(1280).height(720).build();
+    ///
+    /// assert_eq!(viewport.width(), 1280);
+    /// ```
     pub fn width(&self) -> u32 {
         self.width
     }
 
-    /// The height of the browser window in pixels
+    /// Returns the height of the browser window in pixels
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use doco::Viewport;
+    ///
+    /// let viewport = Viewport::builder().width(1280).height(720).build();
+    ///
+    /// assert_eq!(viewport.height(), 720);
+    /// ```
     pub fn height(&self) -> u32 {
         self.height
     }
@@ -52,29 +67,26 @@ impl Viewport {
 
 #[cfg(test)]
 mod tests {
-    use crate::test_utils::*;
-
     use super::*;
 
+    fn assert_auto_traits<T: Send + Sync + Unpin>() {}
+
     #[test]
-    fn new_stores_dimensions() {
-        let vp = Viewport::new(1280, 720);
-        assert_eq!(vp.width(), 1280);
-        assert_eq!(vp.height(), 720);
+    fn builder_stores_height() {
+        let viewport = Viewport::builder().width(1280).height(720).build();
+
+        assert_eq!(viewport.height(), 720);
     }
 
     #[test]
-    fn trait_send() {
-        assert_send::<Viewport>();
+    fn builder_stores_width() {
+        let viewport = Viewport::builder().width(1280).height(720).build();
+
+        assert_eq!(viewport.width(), 1280);
     }
 
     #[test]
-    fn trait_sync() {
-        assert_sync::<Viewport>();
-    }
-
-    #[test]
-    fn trait_unpin() {
-        assert_unpin::<Viewport>();
+    fn viewport_is_send_sync_and_unpin() {
+        assert_auto_traits::<Viewport>();
     }
 }

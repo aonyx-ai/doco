@@ -1,9 +1,9 @@
 //! Derive macros for the Doco testing framework
 //!
 //! Doco is a test runner and library for writing end-to-tests of web applications. It runs tests
-//! in isolated, ephemeral environments. This crate provides procedural macros to make it easier to
-//! set up the test runner, collect all tests, and then run them individually in isolated, ephemeral
-//! environments.
+//! in isolated, ephemeral environments. This crate provides procedural macros that make it easier
+//! to set up the test runner and collect all tests. The runner then runs each test individually in
+//! an isolated, ephemeral environment.
 //!
 //! It is not recommended to use this crate directly. Instead, use the [`doco`] crate that
 //! re-exports the macros from this crate.
@@ -94,10 +94,12 @@ pub fn test(_attr: TokenStream, input: TokenStream) -> TokenStream {
             .join().map_err(|_| doco::anyhow!("failed to run test in isolated thread"))?
         }
 
-        doco::inventory::submit!(doco::TestCase {
-            name: #input_fn_name,
-            function: #test_fn_ident
-        });
+        doco::inventory::submit!(
+            doco::TestCase::builder()
+                .name(#input_fn_name)
+                .function(#test_fn_ident)
+                .build()
+        );
     };
 
     test_function.into()

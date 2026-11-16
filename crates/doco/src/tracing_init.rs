@@ -8,7 +8,7 @@ use tracing_subscriber::EnvFilter;
 /// environment variable. The default filter is `doco=info,warn`, which shows Doco's info-level
 /// messages and warn-level messages from all other crates.
 ///
-/// Uses `try_init()` internally so it is safe to call multiple times — subsequent calls are
+/// Uses `try_init()` internally, so it is safe to call multiple times. Subsequent calls are
 /// silently ignored. This is important because test binaries may call `init_tracing()` from both
 /// `#[doco::main]` and individual test setup.
 ///

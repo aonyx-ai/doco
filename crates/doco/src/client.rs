@@ -11,8 +11,8 @@ use typed_builder::TypedBuilder;
 /// WebDriver client that interacts with the web application
 ///
 /// The `Client` implements the [WebDriver] protocol to interact with the web application. It is
-/// preconfigured to target the server that has been passed to Doco so that users only need to
-/// supply the path that they want to test.
+/// preconfigured to target the server that has been passed to Doco, so users only need to supply
+/// the path to test.
 ///
 /// Internally, the client uses the [thirtyfour] crate to interact with the WebDriver server. For
 /// examples on what methods are available on the `Client` and how to interact with the web
@@ -102,22 +102,12 @@ impl Deref for Client {
 
 #[cfg(test)]
 mod tests {
-    use crate::test_utils::*;
-
     use super::*;
 
-    #[test]
-    fn trait_send() {
-        assert_send::<Client>();
-    }
+    fn assert_auto_traits<T: Send + Sync + Unpin>() {}
 
     #[test]
-    fn trait_sync() {
-        assert_sync::<Client>();
-    }
-
-    #[test]
-    fn trait_unpin() {
-        assert_unpin::<Client>();
+    fn client_is_send_sync_and_unpin() {
+        assert_auto_traits::<Client>();
     }
 }
