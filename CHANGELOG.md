@@ -9,6 +9,26 @@ Versioning].
 
 ## [Unreleased]
 
+### Added
+
+- `ConnectError` and `RunTestError` name the step that failed. Each variant
+  holds the underlying error as its source.
+- `Headless` enum with the variants `Enabled` and `Disabled`.
+- `Viewport::builder()` and `TestCase::builder()`.
+- Getters on `TestCase`.
+
+### Changed
+
+- `Doco::headless` takes `Headless` instead of a `bool`.
+- `Doco::connect()` returns `Result<Session, ConnectError>`.
+- `TestRunner::run_test` returns `Result<(), RunTestError>`.
+- `Session::close()` returns nothing.
+
+### Removed
+
+- `Viewport::new`. Use `Viewport::builder()` instead.
+- The public fields of `TestCase`. Use the getters instead.
+
 ## [0.2.3] - 2026-03-09
 
 ### Added
