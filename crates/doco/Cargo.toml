@@ -11,6 +11,7 @@ readme = "../../README.md"
 
 [dependencies]
 anyhow = "1.0.86"
+bon = "3.10"
 doco-derive = { path = "../doco-derive", version = "0.2.3" }
 thirtyfour = "0.38"
 getset = "0.1.2"
@@ -19,10 +20,12 @@ libtest-mimic = "0.8"
 reqwest = "0.13.0"
 serde_json = "1"
 testcontainers = "0.28.0"
+thiserror = "2"
 tokio = { version = "1.40.0", features = ["macros", "rt-multi-thread"] }
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 typed-builder = "0.23.0"
+url = "2"
 
 [dev-dependencies]
 axum = "0.8.0"

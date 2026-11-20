@@ -3,7 +3,6 @@
 use std::ops::Deref;
 use std::sync::Arc;
 
-use anyhow::Context;
 use getset::Getters;
 use reqwest::Url;
 use testcontainers::core::{Host, IntoContainerPort, WaitFor};
@@ -11,15 +10,17 @@ use testcontainers::runners::AsyncRunner;
 use testcontainers::{ContainerAsync, GenericImage, ImageExt};
 use tracing::{debug, info};
 
-use crate::{Client, Doco, Result};
+use crate::{Client, ConnectError, Doco, Headless};
 
 /// The host name for Docker containers to access the host machine
 const DOCKER_HOST: &str = "host.docker.internal";
 
 /// A running service container with its resolved network address
 ///
-/// Created by starting a [`Service`](crate::Service) configuration. The container is kept alive
-/// by ownership and stopped when dropped.
+/// Created by starting a [`Service`] configuration. The container is kept alive by ownership and
+/// stopped when dropped.
+///
+/// [`Service`]: crate::Service
 struct RunningService {
     /// The running container
     container: ContainerAsync<GenericImage>,
@@ -30,7 +31,7 @@ struct RunningService {
 
 impl RunningService {
     /// Starts a service container from its configuration
-    async fn start(config: &crate::Service) -> Result<Self> {
+    async fn start(config: &crate::Service) -> Result<Self, ConnectError> {
         debug!(
             image = config.image(),
             tag = config.tag(),
@@ -57,7 +58,13 @@ impl RunningService {
             image = image.with_cmd(config.cmd().clone());
         }
 
-        let container = image.start().await?;
+        let container = image
+            .start()
+            .await
+            .map_err(|source| ConnectError::StartService {
+                image: config.image().clone(),
+                source,
+            })?;
 
         debug!(image = config.image(), "service container ready");
 
@@ -67,13 +74,16 @@ impl RunningService {
         })
     }
 
-    /// The bridge IP address for linking this service to the server container
-    async fn bridge_ip(&self) -> Result<std::net::IpAddr> {
+    /// Returns the bridge IP address for linking this service to the server container
+    async fn bridge_ip(&self) -> Result<std::net::IpAddr, ConnectError> {
         let ip = self
             .container
             .get_bridge_ip_address()
             .await
-            .context("failed to get bridge IP for service")?;
+            .map_err(|source| ConnectError::ResolveServiceAddress {
+                image: self.image.clone(),
+                source,
+            })?;
         debug!(image = self.image, %ip, "resolved service bridge IP");
         Ok(ip)
     }
@@ -81,8 +91,10 @@ impl RunningService {
 
 /// A running server container with its resolved base URL
 ///
-/// Created by starting a [`Server`](crate::Server) configuration along with any
-/// [`RunningService`]s that it depends on. The container is kept alive by ownership.
+/// Created by starting a [`Server`] configuration along with any [`RunningService`]s that it
+/// depends on. The container is kept alive by ownership.
+///
+/// [`Server`]: crate::Server
 struct RunningServer {
     /// The running container
     container: ContainerAsync<GenericImage>,
@@ -91,9 +103,14 @@ struct RunningServer {
     base_url: Url,
 }
 
+#[bon::bon]
 impl RunningServer {
     /// Starts the server container, linking it to any running services
-    async fn start(config: &crate::Server, services: &[RunningService]) -> Result<Self> {
+    #[builder]
+    async fn start(
+        config: &crate::Server,
+        services: &[RunningService],
+    ) -> Result<Self, ConnectError> {
         debug!(
             image = config.image(),
             tag = config.tag(),
@@ -128,9 +145,16 @@ impl RunningServer {
             server = server.with_cmd(config.cmd().clone());
         }
 
-        let container = server.start().await?;
-        let port = container.get_host_port_ipv4(config.port()).await?;
-        let base_url = format!("http://{DOCKER_HOST}:{port}").parse()?;
+        let container = server
+            .start()
+            .await
+            .map_err(|source| ConnectError::StartServer { source })?;
+        let port = container
+            .get_host_port_ipv4(config.port())
+            .await
+            .map_err(|source| ConnectError::ResolveServerPort { source })?;
+        let base_url = Url::parse(&format!("http://{DOCKER_HOST}:{port}"))
+            .map_err(|source| ConnectError::ParseServerUrl { source })?;
 
         debug!(%base_url, "server container ready");
 
@@ -148,38 +172,47 @@ impl RunningServer {
 async fn create_driver(
     selenium: &ContainerAsync<GenericImage>,
     doco: &Doco,
-) -> Result<thirtyfour::WebDriver> {
+) -> Result<thirtyfour::WebDriver, ConnectError> {
     let mut caps = thirtyfour::DesiredCapabilities::firefox();
-    if *doco.headless() {
-        caps.set_headless()
-            .context("failed to set headless capability")?;
+    match doco.headless() {
+        Headless::Enabled => caps
+            .set_headless()
+            .map_err(|source| ConnectError::SetHeadless { source })?,
+        Headless::Disabled => {}
     }
     if !doco.prefs().is_empty() {
         let mut prefs = thirtyfour::common::capabilities::firefox::FirefoxPreferences::new();
         for (name, value) in doco.prefs() {
             prefs
                 .set(name, value)
-                .with_context(|| format!("failed to set Firefox preference {name}"))?;
+                .map_err(|source| ConnectError::SetPreference {
+                    name: name.clone(),
+                    source,
+                })?;
         }
         caps.set_preferences(prefs)
-            .context("failed to apply Firefox preferences")?;
+            .map_err(|source| ConnectError::ApplyPreferences { source })?;
     }
 
-    let endpoint = format!(
-        "http://{}:{}",
-        selenium.get_host().await?,
-        selenium.get_host_port_ipv4(4444).await?
-    );
+    let host = selenium
+        .get_host()
+        .await
+        .map_err(|source| ConnectError::ResolveSeleniumEndpoint { source })?;
+    let port = selenium
+        .get_host_port_ipv4(4444)
+        .await
+        .map_err(|source| ConnectError::ResolveSeleniumEndpoint { source })?;
+    let endpoint = format!("http://{host}:{port}");
 
     debug!(
-        headless = *doco.headless(),
+        headless = ?doco.headless(),
         %endpoint,
         "connecting to WebDriver",
     );
 
     let driver = thirtyfour::WebDriver::new(&endpoint, caps)
         .await
-        .context("failed to connect to WebDriver")?;
+        .map_err(|source| ConnectError::ConnectWebDriver { source })?;
 
     if let Some(viewport) = doco.viewport() {
         debug!(
@@ -190,7 +223,7 @@ async fn create_driver(
         driver
             .set_window_rect(0, 0, viewport.width(), viewport.height())
             .await
-            .context("failed to set browser viewport")?;
+            .map_err(|source| ConnectError::SetViewport { source })?;
     }
 
     Ok(driver)
@@ -202,7 +235,7 @@ async fn create_driver(
 /// server, and any services alive. When the session is dropped, the containers are stopped
 /// automatically.
 ///
-/// Use [`Doco::connect()`](crate::Doco::connect) to create a session.
+/// Use [`Doco::connect()`] to create a session.
 ///
 /// # Examples
 ///
@@ -220,10 +253,12 @@ async fn create_driver(
 /// let body = session.source().await?;
 /// assert!(body.contains("Hello"));
 ///
-/// session.close().await?;
+/// session.close().await;
 /// # Ok(())
 /// # }
 /// ```
+///
+/// [`Doco::connect()`]: crate::Doco::connect
 #[derive(Getters)]
 pub struct Session {
     /// The WebDriver client connected to the application
@@ -233,41 +268,53 @@ pub struct Session {
     /// The WebDriver instance, kept for cleanup
     driver: thirtyfour::WebDriver,
 
-    /// The Selenium container — kept alive by ownership
+    /// The Selenium container, kept alive by ownership
     _selenium: Arc<ContainerAsync<GenericImage>>,
 
-    /// The application server container — kept alive by ownership
+    /// The application server container, kept alive by ownership
     _server: ContainerAsync<GenericImage>,
 
-    /// Auxiliary service containers — kept alive by ownership
+    /// Auxiliary service containers, kept alive by ownership
     _services: Vec<ContainerAsync<GenericImage>>,
 }
 
+#[bon::bon]
 impl Session {
     /// Creates a new session by starting all required containers
     ///
     /// Starts Selenium, the application server, and any configured services, then connects a
     /// WebDriver client. This is the implementation behind [`Doco::connect()`].
-    pub(crate) async fn connect(doco: &Doco) -> Result<Self> {
+    pub(crate) async fn connect(doco: &Doco) -> Result<Self, ConnectError> {
         info!("initializing session");
         let selenium = Arc::new(Self::start_selenium().await?);
-        Self::with_selenium(doco, selenium).await
+        Self::with_selenium()
+            .doco(doco)
+            .selenium(selenium)
+            .call()
+            .await
     }
 
     /// Creates a session using an existing Selenium container
     ///
-    /// Used by [`TestRunner`](crate::TestRunner) to share one Selenium instance across tests
-    /// while creating fresh server and service containers per test.
+    /// Used by [`TestRunner`] to share one Selenium instance across tests while creating fresh
+    /// server and service containers per test.
+    ///
+    /// [`TestRunner`]: crate::TestRunner
+    #[builder]
     pub(crate) async fn with_selenium(
         doco: &Doco,
         selenium: Arc<ContainerAsync<GenericImage>>,
-    ) -> Result<Self> {
+    ) -> Result<Self, ConnectError> {
         let mut services = Vec::with_capacity(doco.services().len());
         for config in doco.services() {
             services.push(RunningService::start(config).await?);
         }
 
-        let server = RunningServer::start(doco.server(), &services).await?;
+        let server = RunningServer::start()
+            .config(doco.server())
+            .services(&services)
+            .call()
+            .await?;
         let driver = create_driver(&selenium, doco).await?;
 
         let client = Client::builder()
@@ -287,23 +334,38 @@ impl Session {
     /// Shuts down the browser session
     ///
     /// Sends a quit command to the WebDriver. The containers are cleaned up automatically when
-    /// the session is dropped, but calling this method ensures the browser exits cleanly.
+    /// the session is dropped, but calling this method ensures the browser exits cleanly. The
+    /// method ignores a WebDriver quit error, because the containers are cleaned up on drop
+    /// regardless.
     ///
-    /// # Errors
+    /// # Examples
     ///
-    /// This method currently always succeeds. The WebDriver quit error is intentionally
-    /// suppressed since the containers will be cleaned up on drop regardless.
-    pub async fn close(self) -> Result<()> {
+    /// ```no_run
+    /// use doco::{Doco, Server};
+    ///
+    /// # async fn example() -> doco::Result<()> {
+    /// let doco = Doco::builder()
+    ///     .server(Server::builder().image("my-app").tag("latest").port(8080).build())
+    ///     .build();
+    ///
+    /// let session = doco.connect().await?;
+    ///
+    /// session.close().await;
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub async fn close(self) {
         debug!("closing session");
         self.driver.quit().await.ok();
-        Ok(())
     }
 
     /// Starts the Selenium container
     ///
-    /// Exposed for [`TestRunner`](crate::TestRunner) to share a single Selenium instance across
-    /// multiple tests. Most callers should use [`Doco::connect()`] instead.
-    pub(crate) async fn start_selenium() -> Result<ContainerAsync<GenericImage>> {
+    /// Exposed for [`TestRunner`] to share a single Selenium instance across multiple tests. Most
+    /// callers should use [`Doco::connect()`] instead.
+    ///
+    /// [`TestRunner`]: crate::TestRunner
+    pub(crate) async fn start_selenium() -> Result<ContainerAsync<GenericImage>, ConnectError> {
         info!("starting selenium container");
         GenericImage::new("selenium/standalone-firefox", "latest")
             .with_exposed_port(4444.tcp())
@@ -311,7 +373,7 @@ impl Session {
             .with_host(DOCKER_HOST, Host::HostGateway)
             .start()
             .await
-            .context("failed to start Selenium container")
+            .map_err(|source| ConnectError::StartSelenium { source })
     }
 }
 
@@ -325,22 +387,22 @@ impl Deref for Session {
 
 #[cfg(test)]
 mod tests {
-    use crate::test_utils::*;
-
     use super::*;
 
+    fn assert_auto_traits<T: Send + Sync + Unpin>() {}
+
     #[test]
-    fn trait_send() {
-        assert_send::<Session>();
+    fn running_server_is_send_sync_and_unpin() {
+        assert_auto_traits::<RunningServer>();
     }
 
     #[test]
-    fn trait_sync() {
-        assert_sync::<Session>();
+    fn running_service_is_send_sync_and_unpin() {
+        assert_auto_traits::<RunningService>();
     }
 
     #[test]
-    fn trait_unpin() {
-        assert_unpin::<Session>();
+    fn session_is_send_sync_and_unpin() {
+        assert_auto_traits::<Session>();
     }
 }

@@ -10,6 +10,20 @@ use crate::environment::Variable;
 ///
 /// The `Server` struct configures the server that is being tested. Doco runs the server as a Docker
 /// container, using a prebuilt image.
+///
+/// # Examples
+///
+/// ```rust
+/// use doco::Server;
+///
+/// let server = Server::builder()
+///     .image("crccheck/hello-world")
+///     .tag("v1.0.0")
+///     .port(8000)
+///     .build();
+///
+/// assert_eq!(server.port(), 8000);
+/// ```
 #[derive(Clone, Debug, CopyGetters, Getters, TypedBuilder)]
 pub struct Server {
     /// The name of the Docker image for the server, e.g. `rust`
@@ -29,7 +43,7 @@ pub struct Server {
     /// Environment variables to set in the service's container
     #[builder(via_mutators(init = Vec::new()), mutators(
         pub fn env(mut self, name: impl Into<String>, value: impl Into<String>) {
-            self.envs.push(Variable::new(name, value));
+            self.envs.push(Variable::builder().name(name).value(value).build());
         }
     ))]
     #[getset(get = "pub")]
@@ -63,9 +77,9 @@ pub struct Server {
 
 #[cfg(test)]
 mod tests {
-    use crate::test_utils::*;
-
     use super::*;
+
+    fn assert_auto_traits<T: Send + Sync + Unpin>() {}
 
     #[test]
     fn cmd_arg_collects_args() {
@@ -107,17 +121,7 @@ mod tests {
     }
 
     #[test]
-    fn trait_send() {
-        assert_send::<Server>();
-    }
-
-    #[test]
-    fn trait_sync() {
-        assert_sync::<Server>();
-    }
-
-    #[test]
-    fn trait_unpin() {
-        assert_unpin::<Server>();
+    fn server_is_send_sync_and_unpin() {
+        assert_auto_traits::<Server>();
     }
 }

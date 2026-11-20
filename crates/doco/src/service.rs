@@ -44,7 +44,7 @@ pub struct Service {
     /// Environment variables to set in the service's container
     #[builder(via_mutators(init = Vec::new()), mutators(
         pub fn env(mut self, name: impl Into<String>, value: impl Into<String>) {
-            self.envs.push(Variable::new(name, value));
+            self.envs.push(Variable::builder().name(name).value(value).build());
         }
     ))]
     #[getset(get = "pub")]
@@ -78,9 +78,9 @@ pub struct Service {
 
 #[cfg(test)]
 mod tests {
-    use crate::test_utils::*;
-
     use super::*;
+
+    fn assert_auto_traits<T: Send + Sync + Unpin>() {}
 
     #[test]
     fn cmd_arg_collects_args() {
@@ -120,17 +120,7 @@ mod tests {
     }
 
     #[test]
-    fn trait_send() {
-        assert_send::<Service>();
-    }
-
-    #[test]
-    fn trait_sync() {
-        assert_sync::<Service>();
-    }
-
-    #[test]
-    fn trait_unpin() {
-        assert_unpin::<Service>();
+    fn service_is_send_sync_and_unpin() {
+        assert_auto_traits::<Service>();
     }
 }
